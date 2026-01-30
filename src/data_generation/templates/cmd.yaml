@@ -1,0 +1,434 @@
+# Windows CMD (Command Prompt) templates for training data generation
+# CMD uses DOS-style commands and batch syntax
+
+shell: cmd
+aliases: ["batch", "dos"]
+weight: 0.12  # 12% of total data
+
+# Navigation commands
+navigation:
+  - correct: "cd {path}"
+    errors:
+      - "cd{path}"
+      - "cd /d {path}"  # Drive change version
+    natural_language:
+      - "go to {path}"
+      - "change directory to {path}"
+
+  - correct: "cd .."
+    errors:
+      - "cd.."
+      - "cd..."
+    natural_language:
+      - "go up"
+      - "parent directory"
+
+  - correct: "cd %USERPROFILE%"
+    errors:
+      - "cd ~"  # Bash style
+      - "cd $HOME"  # Bash style
+      - "cd %HOME%"
+    natural_language:
+      - "go home"
+      - "home directory"
+
+  - correct: "mkdir {path}"
+    aliases: ["md"]
+    errors:
+      - "mkdir -p {path}"  # Bash style
+      - "md {path}"
+    natural_language:
+      - "create directory {path}"
+      - "make folder {path}"
+
+  - correct: "cd /d {drive}:{path}"
+    errors:
+      - "cd {drive}:{path}"  # May not change drive
+    natural_language:
+      - "change to {drive} drive and {path}"
+      - "go to different drive"
+
+# File operations
+file_operations:
+  - correct: "dir"
+    errors:
+      - "ls"  # Bash style
+      - "dir /a"
+    natural_language:
+      - "list files"
+      - "show files"
+
+  - correct: "dir /a"
+    errors:
+      - "ls -la"  # Bash style
+      - "dir -a"
+    natural_language:
+      - "list all files including hidden"
+      - "show hidden files"
+
+  - correct: "dir /s"
+    errors:
+      - "ls -R"  # Bash style
+      - "dir -s"
+    natural_language:
+      - "list files recursively"
+      - "list all subdirectories"
+
+  - correct: "type {file}"
+    errors:
+      - "cat {file}"  # Bash style
+      - "tpye {file}"
+    natural_language:
+      - "show contents of {file}"
+      - "print {file}"
+
+  - correct: "copy {src} {dst}"
+    errors:
+      - "cp {src} {dst}"  # Bash style
+      - "copy {src} to {dst}"
+    natural_language:
+      - "copy {src} to {dst}"
+
+  - correct: "xcopy {src} {dst} /s /e"
+    errors:
+      - "cp -r {src} {dst}"  # Bash style
+      - "copy /s {src} {dst}"
+    natural_language:
+      - "copy directory {src} to {dst}"
+      - "recursive copy"
+
+  - correct: "move {src} {dst}"
+    errors:
+      - "mv {src} {dst}"  # Bash style
+      - "mov {src} {dst}"
+    natural_language:
+      - "move {src} to {dst}"
+      - "rename {src} to {dst}"
+
+  - correct: "del {file}"
+    aliases: ["erase"]
+    errors:
+      - "rm {file}"  # Bash style
+      - "delete {file}"
+    natural_language:
+      - "delete {file}"
+      - "remove {file}"
+
+  - correct: "del /s /q {path}"
+    errors:
+      - "rm -rf {path}"  # Bash style
+      - "del -r {path}"
+    natural_language:
+      - "delete {path} recursively"
+      - "force remove"
+
+  - correct: "rmdir /s /q {path}"
+    aliases: ["rd"]
+    errors:
+      - "rm -rf {path}"  # Bash style
+      - "rmdir {path}"
+    natural_language:
+      - "delete directory {path}"
+      - "remove folder"
+
+  - correct: "ren {old} {new}"
+    aliases: ["rename"]
+    errors:
+      - "mv {old} {new}"  # Bash style
+      - "rename {old} to {new}"
+    natural_language:
+      - "rename {old} to {new}"
+
+# Search commands
+search:
+  - correct: "dir /s /b *{pattern}*"
+    errors:
+      - "find . -name '{pattern}'"  # Bash style
+      - "dir /s {pattern}"
+    natural_language:
+      - "find files named {pattern}"
+      - "search for {pattern}"
+
+  - correct: "findstr /s /i \"{pattern}\" *.*"
+    errors:
+      - "grep -r '{pattern}' ."  # Bash style
+      - "findstr {pattern} *"
+    natural_language:
+      - "search for {pattern} in all files"
+      - "grep for {pattern}"
+
+  - correct: "findstr \"{pattern}\" {file}"
+    errors:
+      - "grep '{pattern}' {file}"  # Bash style
+      - "findstr {pattern} {file}"
+    natural_language:
+      - "search for {pattern} in {file}"
+
+# Process management
+processes:
+  - correct: "tasklist"
+    errors:
+      - "ps"  # Bash style
+      - "task list"
+    natural_language:
+      - "list processes"
+      - "show running processes"
+
+  - correct: "tasklist | findstr {process}"
+    errors:
+      - "ps aux | grep {process}"  # Bash style
+      - "tasklist /fi \"imagename eq {process}\""
+    natural_language:
+      - "find {process} process"
+      - "is {process} running"
+
+  - correct: "taskkill /im {name} /f"
+    errors:
+      - "kill {name}"  # Bash style
+      - "taskkill {name}"
+    natural_language:
+      - "kill {name} process"
+      - "force stop {name}"
+
+  - correct: "taskkill /pid {pid} /f"
+    errors:
+      - "kill -9 {pid}"  # Bash style
+      - "taskkill /pid {pid}"
+    natural_language:
+      - "kill process {pid}"
+      - "force kill {pid}"
+
+# Network commands
+network:
+  - correct: "ping {host}"
+    errors:
+      - "ping -c 4 {host}"  # Bash style
+      - "pign {host}"
+    natural_language:
+      - "ping {host}"
+      - "check if {host} is reachable"
+
+  - correct: "ipconfig"
+    errors:
+      - "ifconfig"  # Bash style
+      - "ip addr"  # Linux style
+    natural_language:
+      - "show ip address"
+      - "network configuration"
+
+  - correct: "ipconfig /all"
+    errors:
+      - "ifconfig -a"  # Bash style
+    natural_language:
+      - "full network info"
+      - "all network details"
+
+  - correct: "netstat -an"
+    errors:
+      - "ss -tulpn"  # Linux style
+      - "netstat"
+    natural_language:
+      - "show network connections"
+      - "list ports"
+
+  - correct: "netstat -an | findstr LISTEN"
+    errors:
+      - "netstat -tulpn"  # Linux style
+    natural_language:
+      - "show listening ports"
+
+  - correct: "nslookup {domain}"
+    errors:
+      - "dig {domain}"  # Bash style
+      - "nslokup {domain}"
+    natural_language:
+      - "dns lookup {domain}"
+      - "resolve {domain}"
+
+# System commands
+system:
+  - correct: "systeminfo"
+    errors:
+      - "uname -a"  # Bash style
+      - "systemInf"
+    natural_language:
+      - "system information"
+      - "computer info"
+
+  - correct: "hostname"
+    errors:
+      - "hostnmae"
+    natural_language:
+      - "computer name"
+      - "machine name"
+
+  - correct: "whoami"
+    errors:
+      - "whomi"
+    natural_language:
+      - "current user"
+      - "who am i"
+
+  - correct: "echo %USERNAME%"
+    errors:
+      - "echo $USER"  # Bash style
+    natural_language:
+      - "print username"
+
+  - correct: "ver"
+    errors:
+      - "uname -r"  # Bash style
+    natural_language:
+      - "windows version"
+      - "os version"
+
+# Disk operations
+disk:
+  - correct: "chkdsk {drive}:"
+    errors:
+      - "fsck {drive}"  # Bash style
+      - "check disk {drive}"
+    natural_language:
+      - "check disk {drive}"
+      - "disk check"
+
+  - correct: "diskpart"
+    errors:
+      - "fdisk"  # Bash style
+    natural_language:
+      - "disk partition tool"
+
+# Environment variables
+variables:
+  - correct: "set {var}={value}"
+    errors:
+      - "export {var}={value}"  # Bash style
+      - "set {var} = {value}"  # Extra spaces
+    natural_language:
+      - "set variable {var}"
+      - "set environment variable"
+
+  - correct: "echo %{var}%"
+    errors:
+      - "echo ${var}"  # Bash style
+      - "echo $var"  # Bash style
+    natural_language:
+      - "print {var}"
+      - "show {var} value"
+
+  - correct: "set"
+    errors:
+      - "env"  # Bash style
+      - "printenv"  # Bash style
+    natural_language:
+      - "list environment variables"
+      - "show all variables"
+
+  - correct: "%PATH%"
+    errors:
+      - "$PATH"  # Bash style
+    natural_language:
+      - "path variable"
+
+# Git commands (same across platforms)
+git:
+  - correct: "git status"
+    errors:
+      - "gti status"
+      - "git stauts"
+    natural_language:
+      - "git status"
+
+  - correct: "git add ."
+    errors:
+      - "git add"
+    natural_language:
+      - "stage all"
+
+  - correct: "git commit -m \"{message}\""
+    errors:
+      - "git commit -m '{message}'"  # Single quotes may not work
+      - "git commit '{message}'"
+    natural_language:
+      - "commit with message"
+
+  - correct: "git push origin {branch}"
+    errors:
+      - "git push"
+    natural_language:
+      - "push to {branch}"
+
+# Batch-specific
+batch:
+  - correct: "for /r %%f in (*.txt) do @echo %%f"
+    errors:
+      - "for f in *.txt; do echo $f; done"  # Bash style
+    natural_language:
+      - "loop through txt files"
+
+  - correct: "if exist {file} (echo found)"
+    errors:
+      - "if [ -f {file} ]; then echo found; fi"  # Bash style
+    natural_language:
+      - "check if file exists"
+
+  - correct: "pause"
+    errors:
+      - "read"  # Bash style
+    natural_language:
+      - "wait for keypress"
+      - "pause execution"
+
+  - correct: "cls"
+    errors:
+      - "clear"  # Bash style
+    natural_language:
+      - "clear screen"
+
+  - correct: "exit /b"
+    errors:
+      - "exit"
+    natural_language:
+      - "exit script"
+      - "return from batch"
+
+# Admin/elevated commands
+admin:
+  - correct: "runas /user:Administrator {command}"
+    errors:
+      - "sudo {command}"  # Bash style
+    natural_language:
+      - "run as admin"
+      - "elevated privileges"
+
+  - correct: "net user"
+    errors:
+      - "cat /etc/passwd"  # Bash style
+    natural_language:
+      - "list users"
+
+  - correct: "net user {username} *"
+    errors:
+      - "passwd {username}"  # Bash style
+    natural_language:
+      - "change password for {username}"
+
+# Services
+services:
+  - correct: "net start {service}"
+    errors:
+      - "systemctl start {service}"  # Linux style
+    natural_language:
+      - "start {service}"
+
+  - correct: "net stop {service}"
+    errors:
+      - "systemctl stop {service}"  # Linux style
+    natural_language:
+      - "stop {service}"
+
+  - correct: "sc query"
+    errors:
+      - "systemctl list-units"  # Linux style
+    natural_language:
+      - "list services"
