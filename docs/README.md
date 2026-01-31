@@ -9,6 +9,7 @@ This directory contains all project documentation for the `fix` CLI.
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | System design and diagrams |
 | [HANDOFF.md](./HANDOFF.md) | Developer onboarding guide |
 | [HISTORY.md](./HISTORY.md) | Development timeline and changes |
+| [testing-strategy.md](./testing-strategy.md) | Cross-platform testing approach |
 
 ## For AI Agents
 
@@ -31,6 +32,7 @@ See [ADR/](./ADR/) for all architecture decision records:
 | [003](./ADR/003-cross-platform-support.md) | Cross-Platform Support |
 | [004](./ADR/004-rust-cli-implementation.md) | Rust CLI Implementation |
 | [005](./ADR/005-huggingface-model-distribution.md) | HuggingFace Model Distribution |
+| [006](./ADR/006-cross-platform-testing-strategy.md) | Cross-Platform Testing Strategy |
 
 Use [000-template.md](./ADR/000-template.md) for new ADRs.
 

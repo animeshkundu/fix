@@ -2,6 +2,32 @@
 
 ## January 2025
 
+### Cross-Platform Testing Infrastructure (Jan 31)
+
+Added comprehensive testing across platforms, shells, and distributions (ADR-006):
+
+**New CI Workflows:**
+- `test-wsl.yml` - WSL-specific path and environment testing
+- `test-windows-shells.yml` - PowerShell (pwsh + powershell.exe) and CMD testing
+- `test-install.yml` - Installation script testing on all platforms
+- `test-distros.yml` - Linux distribution testing (Alpine, Debian, Ubuntu 20.04, Fedora)
+
+**Integration Tests (`fix-cli/tests/`):**
+- `cli_test.rs` - Binary execution and flag testing
+- `config_test.rs` - Cross-platform config path verification
+- `wsl_test.rs` - WSL environment isolation tests
+- `e2e_test.rs` - Model inference tests (with model caching)
+
+**CI Improvements:**
+- Expanded test matrix to run on macOS, Linux, and Windows
+- E2E model inference tests on every push
+- Model caching to reduce CI bandwidth
+- Tests run with `--test-threads=1` to prevent env var race conditions
+
+**Documentation:**
+- `docs/testing-strategy.md` - Comprehensive testing documentation
+- `docs/ADR/006-cross-platform-testing-strategy.md` - Architecture decision
+
 ### HuggingFace Integration (Jan 31)
 
 Added automatic model download and management:

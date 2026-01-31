@@ -27,9 +27,15 @@ GitHub Actions is the primary automation platform.
 
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
-| `ci.yml` | Push, PR | Format, lint, build, test |
+| `ci.yml` | Push, PR | Format, lint, build, test on all platforms, E2E tests |
 | `release.yml` | Push to fix-cli/ | Version bump, cross-platform build, release |
 | `pages.yml` | Push to website/ | Deploy documentation site |
+| `test-wsl.yml` | Push, PR | WSL-specific testing |
+| `test-windows-shells.yml` | Push, PR | PowerShell and CMD deep testing |
+| `test-install.yml` | Push, PR | Installation script testing |
+| `test-distros.yml` | Push, PR | Linux distribution compatibility |
+
+See [ADR-006](../ADR/006-cross-platform-testing-strategy.md) for testing strategy details.
 
 ### When to Modify Workflows
 - Adding new build targets
