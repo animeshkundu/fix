@@ -110,29 +110,56 @@ cargo build --release
 
 ## Shell Integration
 
-### Bash/Zsh
+Set up a shortcut to automatically correct and run your last failed command. After setup, just type `fix` to correct your previous command.
 
-Add to your `.bashrc` or `.zshrc`:
+### Bash
+
+Add to your `~/.bashrc`:
 
 ```bash
-fuck() {
-    local cmd=$(fc -ln -1)
-    local corrected=$(fix "$cmd")
-    echo "Correcting: $cmd -> $corrected"
-    eval "$corrected"
+fix() {
+    if [[ -n "$1" ]]; then
+        command fix "$@"
+    else
+        local cmd=$(fc -ln -1)
+        local corrected=$(command fix "$cmd")
+        echo "Correcting: $cmd -> $corrected"
+        eval "$corrected"
+    fi
+}
+```
+
+### Zsh
+
+Add to your `~/.zshrc`:
+
+```bash
+fix() {
+    if [[ -n "$1" ]]; then
+        command fix "$@"
+    else
+        local cmd=$(fc -ln -1)
+        local corrected=$(command fix "$cmd")
+        echo "Correcting: $cmd -> $corrected"
+        eval "$corrected"
+    fi
 }
 ```
 
 ### Fish
 
-Add to `~/.config/fish/functions/fuck.fish`:
+Add to `~/.config/fish/functions/fix.fish`:
 
 ```fish
-function fuck
-    set -l cmd (history --max=1)
-    set -l corrected (fix "$cmd")
-    echo "Correcting: $cmd -> $corrected"
-    eval $corrected
+function fix --wraps='command fix'
+    if test (count $argv) -gt 0
+        command fix $argv
+    else
+        set -l cmd (history --max=1)
+        set -l corrected (command fix "$cmd")
+        echo "Correcting: $cmd -> $corrected"
+        eval $corrected
+    end
 end
 ```
 
@@ -141,13 +168,36 @@ end
 Add to your `$PROFILE`:
 
 ```powershell
-function fuck {
-    $cmd = (Get-History -Count 1).CommandLine
-    $corrected = fix $cmd
-    Write-Host "Correcting: $cmd -> $corrected"
-    Invoke-Expression $corrected
+function fix {
+    param([Parameter(ValueFromRemainingArguments=$true)]$args)
+    if ($args) {
+        & "$env:LOCALAPPDATA\fix\fix.exe" @args
+    } else {
+        $cmd = (Get-History -Count 1).CommandLine
+        $corrected = & "$env:LOCALAPPDATA\fix\fix.exe" $cmd
+        Write-Host "Correcting: $cmd -> $corrected"
+        Invoke-Expression $corrected
+    }
 }
 ```
+
+### Cmd (Windows Command Prompt)
+
+For Windows Command Prompt, it's recommended to use PowerShell instead, as cmd.exe has limited history access capabilities. Alternatively, run `fix.exe` directly with the mistyped command as an argument:
+
+```batch
+fix.exe "gti status"
+```
+
+### Tcsh
+
+Add to your `~/.tcshrc`:
+
+```tcsh
+alias fixlast 'set _cmd = `history -h 1` && set _fix = `fix "$_cmd"` && echo "→ $_fix" && eval "$_fix"'
+```
+
+Then use `fixlast` to correct and run your last command, or `fix "typo"` for direct correction.
 
 ## Model
 

@@ -851,7 +851,7 @@ code {
 
 /* Shell Setup */
 .shell-setup {
-  max-width: 650px;
+  max-width: 750px;
   margin: 0 auto;
   text-align: center;
 }
@@ -864,6 +864,24 @@ code {
 .shell-setup > p {
   margin-bottom: var(--spacing-xl);
   color: var(--color-text-secondary);
+}
+
+.shell-intro {
+  font-size: 1rem;
+  margin-bottom: var(--spacing-xl);
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+.shell-intro code {
+  color: var(--color-accent);
+  font-weight: 500;
+}
+
+/* Shell Integration Section */
+.shell-integration {
+  padding: var(--spacing-4xl) 0;
+  background: var(--color-bg-tertiary);
 }
 
 .shell-tabs {

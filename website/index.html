@@ -75,6 +75,7 @@
       <div class="nav-links">
         <a href="#features">Features</a>
         <a href="#install">Install</a>
+        <a href="#shell-integration">Shell Setup</a>
         <a href="#how-it-works">How It Works</a>
         <a href="https://github.com/animeshkundu/fix" class="github-link" target="_blank" rel="noopener">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
@@ -438,52 +439,80 @@
           <p class="platform-note">PowerShell 5.1+</p>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- Shell Integration Section -->
+  <section class="shell-integration" id="shell-integration">
+    <div class="container">
+      <div class="section-header">
+        <h2>🚀 <span class="highlight">Shell Integration</span></h2>
+        <p>Set up a shortcut to automatically correct and run your last failed command</p>
+      </div>
       
-      <!-- Shell Integration -->
       <div class="shell-setup">
-        <h3>Shell Integration (Optional)</h3>
-        <p>Add a shortcut to fix your last command automatically:</p>
+        <p class="shell-intro">After setup, just type <code>fix</code> with no arguments to correct your previous command. Supported on all major shells across macOS, Linux, and Windows.</p>
         
         <div class="shell-tabs">
-          <button class="shell-tab active" data-shell="bash">Bash</button>
-          <button class="shell-tab" data-shell="zsh">Zsh</button>
-          <button class="shell-tab" data-shell="fish">Fish</button>
-          <button class="shell-tab" data-shell="powershell">PowerShell</button>
+          <button class="shell-tab active" data-shell="shell-bash">Bash</button>
+          <button class="shell-tab" data-shell="shell-zsh">Zsh</button>
+          <button class="shell-tab" data-shell="shell-fish">Fish</button>
+          <button class="shell-tab" data-shell="shell-powershell">PowerShell</button>
+          <button class="shell-tab" data-shell="shell-tcsh">Tcsh</button>
+          <button class="shell-tab" data-shell="shell-cmd">Cmd</button>
         </div>
         
         <div class="shell-content">
-          <div class="shell-panel active" id="bash">
+          <div class="shell-panel active" id="shell-bash">
             <p class="shell-instruction">Add to <code>~/.bashrc</code>:</p>
             <div class="code-block">
-              <code>fuck() { local cmd=$(fc -ln -1); eval "$(fix "$cmd")"; }</code>
-              <button class="copy-btn" data-copy='fuck() { local cmd=$(fc -ln -1); eval "$(fix "$cmd")"; }' aria-label="Copy">
+              <code>fix() { if [[ -n "$1" ]]; then command fix "$@"; else local cmd=$(fc -ln -1); local c=$(command fix "$cmd"); echo "→ $c"; eval "$c"; fi; }</code>
+              <button class="copy-btn" data-copy='fix() { if [[ -n "$1" ]]; then command fix "$@"; else local cmd=$(fc -ln -1); local c=$(command fix "$cmd"); echo "→ $c"; eval "$c"; fi; }' aria-label="Copy">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
               </button>
             </div>
           </div>
-          <div class="shell-panel" id="zsh">
+          <div class="shell-panel" id="shell-zsh">
             <p class="shell-instruction">Add to <code>~/.zshrc</code>:</p>
             <div class="code-block">
-              <code>fuck() { local cmd=$(fc -ln -1); eval "$(fix "$cmd")"; }</code>
-              <button class="copy-btn" data-copy='fuck() { local cmd=$(fc -ln -1); eval "$(fix "$cmd")"; }' aria-label="Copy">
+              <code>fix() { if [[ -n "$1" ]]; then command fix "$@"; else local cmd=$(fc -ln -1); local c=$(command fix "$cmd"); echo "→ $c"; eval "$c"; fi; }</code>
+              <button class="copy-btn" data-copy='fix() { if [[ -n "$1" ]]; then command fix "$@"; else local cmd=$(fc -ln -1); local c=$(command fix "$cmd"); echo "→ $c"; eval "$c"; fi; }' aria-label="Copy">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
               </button>
             </div>
           </div>
-          <div class="shell-panel" id="fish">
-            <p class="shell-instruction">Add to <code>~/.config/fish/functions/fuck.fish</code>:</p>
+          <div class="shell-panel" id="shell-fish">
+            <p class="shell-instruction">Add to <code>~/.config/fish/functions/fix.fish</code>:</p>
             <div class="code-block">
-              <code>function fuck; set cmd (history --max=1); eval (fix "$cmd"); end</code>
-              <button class="copy-btn" data-copy='function fuck; set cmd (history --max=1); eval (fix "$cmd"); end' aria-label="Copy">
+              <code>function fix --wraps='command fix'; if test (count $argv) -gt 0; command fix $argv; else; set c (command fix (history --max=1)); echo "→ $c"; eval $c; end; end</code>
+              <button class="copy-btn" data-copy="function fix --wraps='command fix'; if test (count $argv) -gt 0; command fix $argv; else; set c (command fix (history --max=1)); echo \"→ $c\"; eval $c; end; end" aria-label="Copy">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
               </button>
             </div>
           </div>
-          <div class="shell-panel" id="powershell">
+          <div class="shell-panel" id="shell-powershell">
             <p class="shell-instruction">Add to your <code>$PROFILE</code>:</p>
             <div class="code-block">
-              <code>function fuck { $cmd = (Get-History -Count 1).CommandLine; iex (fix $cmd) }</code>
-              <button class="copy-btn" data-copy='function fuck { $cmd = (Get-History -Count 1).CommandLine; iex (fix $cmd) }' aria-label="Copy">
+              <code>function fix { if ($args) { & fix.exe @args } else { $c = & fix.exe (Get-History -Count 1).CommandLine; Write-Host "→ $c"; iex $c } }</code>
+              <button class="copy-btn" data-copy='function fix { if ($args) { & fix.exe @args } else { $c = & fix.exe (Get-History -Count 1).CommandLine; Write-Host "→ $c"; iex $c } }' aria-label="Copy">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="shell-panel" id="shell-tcsh">
+            <p class="shell-instruction">Add to <code>~/.tcshrc</code> (use <code>fixlast</code> to correct last command):</p>
+            <div class="code-block">
+              <code>alias fixlast 'set _cmd = `history -h 1` && set _fix = `fix "$_cmd"` && echo "→ $_fix" && eval "$_fix"'</code>
+              <button class="copy-btn" data-copy='alias fixlast '\''set _cmd = `history -h 1` && set _fix = `fix "$_cmd"` && echo "→ $_fix" && eval "$_fix"'\''' aria-label="Copy">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="shell-panel" id="shell-cmd">
+            <p class="shell-instruction">Use fix directly (cmd has limited history access):</p>
+            <div class="code-block">
+              <code>fix.exe "gti status"</code>
+              <button class="copy-btn" data-copy='fix.exe "gti status"' aria-label="Copy">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
               </button>
             </div>

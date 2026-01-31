@@ -205,21 +205,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cmd-correct"
-version = "0.1.0"
-dependencies = [
- "clap",
- "dirs",
- "indicatif",
- "libc",
- "llama-cpp-2",
- "llama-cpp-sys-2",
- "reqwest",
- "serde",
- "serde_json",
-]
-
-[[package]]
 name = "colorchoice"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -315,6 +300,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f9f9e65c593dd01ac77daad909ea4ad17f0d6d1776193fc8ea766356177abdad"
 dependencies = [
  "glob",
+]
+
+[[package]]
+name = "fix"
+version = "0.0.2"
+dependencies = [
+ "clap",
+ "dirs",
+ "indicatif",
+ "libc",
+ "llama-cpp-2",
+ "llama-cpp-sys-2",
+ "reqwest",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
