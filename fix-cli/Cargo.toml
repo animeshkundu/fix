@@ -1,6 +1,6 @@
 [package]
 name = "fix"
-version = "0.0.3"
+version = "0.0.4"
 edition = "2021"
 description = "AI-powered shell command corrector"
 license = "MIT"
