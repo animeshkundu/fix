@@ -500,19 +500,19 @@
             </div>
           </div>
           <div class="shell-panel" id="shell-tcsh">
-            <p class="shell-instruction">Add to <code>~/.tcshrc</code>:</p>
+            <p class="shell-instruction">Add to <code>~/.tcshrc</code> (use <code>fixlast</code> to correct last command):</p>
             <div class="code-block">
-              <code>alias fix 'if ("\!*" == "") set c=`command fix "\`history -h 1\`"`; echo "→ $c"; eval $c; else command fix \!*; endif'</code>
-              <button class="copy-btn" data-copy='alias fix '\''if ("\!*" == "") set c=`command fix "\`history -h 1\`"`; echo "→ $c"; eval $c; else command fix \!*; endif'\''' aria-label="Copy">
+              <code>alias fixlast 'set _cmd = `history -h 1` && set _fix = `fix "$_cmd"` && echo "→ $_fix" && eval "$_fix"'</code>
+              <button class="copy-btn" data-copy='alias fixlast '\''set _cmd = `history -h 1` && set _fix = `fix "$_cmd"` && echo "→ $_fix" && eval "$_fix"'\''' aria-label="Copy">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
               </button>
             </div>
           </div>
           <div class="shell-panel" id="shell-cmd">
-            <p class="shell-instruction">Create <code>fix.bat</code> in a directory on your PATH:</p>
+            <p class="shell-instruction">Use fix directly (cmd has limited history access):</p>
             <div class="code-block">
-              <code>@echo off &amp;&amp; if "%~1"=="" (for /f "tokens=*" %%i in ('doskey /history') do set "c=%%i") &amp;&amp; fix.exe "%c%" else fix.exe %*</code>
-              <button class="copy-btn" data-copy='@echo off && if "%~1"=="" (for /f "tokens=*" %%i in ('\''doskey /history'\'') do set "c=%%i") && fix.exe "%c%" else fix.exe %*' aria-label="Copy">
+              <code>fix.exe "gti status"</code>
+              <button class="copy-btn" data-copy='fix.exe "gti status"' aria-label="Copy">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
               </button>
             </div>

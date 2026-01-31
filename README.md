@@ -183,24 +183,10 @@ function fix {
 
 ### Cmd (Windows Command Prompt)
 
-Create a batch file `fix.bat` in a directory on your PATH:
+For Windows Command Prompt, it's recommended to use PowerShell instead, as cmd.exe has limited history access capabilities. Alternatively, run `fix.exe` directly with the mistyped command as an argument:
 
 ```batch
-@echo off
-if "%~1"=="" (
-    for /f "tokens=*" %%i in ('doskey /history ^| findstr /n "." ^| sort /r ^| findstr "^2:"') do (
-        set "cmd=%%i"
-        goto :run
-    )
-) else (
-    fix.exe %*
-    goto :eof
-)
-:run
-set "cmd=%cmd:~2%"
-for /f "tokens=*" %%j in ('fix.exe "%cmd%"') do set "corrected=%%j"
-echo Correcting: %cmd% -^> %corrected%
-%corrected%
+fix.exe "gti status"
 ```
 
 ### Tcsh
@@ -208,8 +194,10 @@ echo Correcting: %cmd% -^> %corrected%
 Add to your `~/.tcshrc`:
 
 ```tcsh
-alias fix 'if ("\!*" == "") then; set cmd=`history -h 1`; set corrected=`command fix "$cmd"`; echo "Correcting: $cmd -> $corrected"; eval $corrected; else; command fix \!*; endif'
+alias fixlast 'set _cmd = `history -h 1` && set _fix = `fix "$_cmd"` && echo "→ $_fix" && eval "$_fix"'
 ```
+
+Then use `fixlast` to correct and run your last command, or `fix "typo"` for direct correction.
 
 ## Model
 
