@@ -40,6 +40,35 @@ error() {
   exit 1
 }
 
+# Detect WSL
+is_wsl() {
+  grep -qiE "(microsoft|wsl)" /proc/version 2>/dev/null
+}
+
+# Check for NVIDIA GPU
+has_nvidia_gpu() {
+  command -v lspci >/dev/null 2>&1 && lspci 2>/dev/null | grep -qi nvidia
+}
+
+# Download Windows binary for WSL fallback
+download_windows_binary() {
+  local latest
+  latest=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/')
+  local win_url="https://github.com/${REPO}/releases/download/${latest}/${BINARY}-x86_64-pc-windows-msvc.zip"
+
+  info "Downloading Windows binary for WSL..."
+  local tmpdir=$(mktemp -d)
+  if curl -fsSL "$win_url" -o "${tmpdir}/fix.zip" && unzip -q "${tmpdir}/fix.zip" -d "${tmpdir}"; then
+    mv "${tmpdir}/${BINARY}.exe" "${INSTALL_DIR}/${BINARY}.exe"
+    chmod +x "${INSTALL_DIR}/${BINARY}.exe"
+    rm -rf "${tmpdir}"
+    return 0
+  else
+    rm -rf "${tmpdir}"
+    return 1
+  fi
+}
+
 # Detect OS
 detect_os() {
   case "$(uname -s)" in
@@ -158,12 +187,40 @@ main() {
     success "Test passed! 'gti status' → 'git status'"
   else
     warn "Test produced unexpected output: ${test_output}"
-    warn "The CLI may need GPU drivers or a different build."
-    echo ""
-    echo "Troubleshooting:"
-    echo "  - On WSL: Try the native Windows build instead"
-    echo "  - On Linux: Ensure GPU drivers are installed"
-    echo "  - Run '${BINARY} --verbose gti status' for debug output"
+
+    if is_wsl; then
+      info "WSL detected. Trying Windows binary instead..."
+      if download_windows_binary; then
+        # Re-test with Windows binary
+        test_output=$("${INSTALL_DIR}/${BINARY}.exe" "gti status" 2>&1) || true
+        if [ "$test_output" = "git status" ]; then
+          success "Windows binary works! Using fix.exe on WSL."
+          rm -f "${INSTALL_DIR}/${BINARY}"  # Remove Linux binary
+        else
+          warn "Windows binary also failed."
+          echo ""
+          echo "Debug with: ${BINARY}.exe --verbose gti status"
+        fi
+      else
+        warn "Failed to download Windows binary."
+        echo ""
+        echo "You can manually download from:"
+        echo "  https://github.com/${REPO}/releases/latest"
+      fi
+    else
+      # Native Linux
+      echo ""
+      echo "Troubleshooting:"
+      if has_nvidia_gpu; then
+        echo "  NVIDIA GPU detected. Ensure drivers are installed:"
+        echo "    Ubuntu/Debian: sudo apt install nvidia-driver-535"
+        echo "    Fedora: sudo dnf install akmod-nvidia"
+      else
+        echo "  No GPU detected. CPU inference should still work."
+      fi
+      echo ""
+      echo "  Debug with: ${BINARY} --verbose gti status"
+    fi
   fi
 
   success "Installation complete!"

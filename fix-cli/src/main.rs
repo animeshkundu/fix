@@ -362,30 +362,44 @@ mod stderr_redirect {
 
 #[cfg(windows)]
 mod stderr_redirect {
-    use std::ffi::CString;
+    use std::fs::OpenOptions;
+    use std::os::windows::io::AsRawHandle;
+    use windows_sys::Win32::Foundation::INVALID_HANDLE_VALUE;
+    use windows_sys::Win32::System::Console::{GetStdHandle, SetStdHandle, STD_ERROR_HANDLE};
 
-    pub struct SavedStderr;
+    pub struct SavedStderr {
+        saved_handle: isize,
+    }
 
     pub fn redirect() -> Option<SavedStderr> {
         unsafe {
-            let stderr_handle = libc_stdhandle::stderr();
-            let nul = CString::new("NUL").unwrap();
-            let mode = CString::new("w").unwrap();
-
-            let result = libc::freopen(nul.as_ptr(), mode.as_ptr(), stderr_handle);
-            if result.is_null() {
+            // Save current stderr handle
+            let saved = GetStdHandle(STD_ERROR_HANDLE);
+            if saved == 0 || saved == INVALID_HANDLE_VALUE {
                 return None;
             }
-            Some(SavedStderr)
+
+            // Open NUL device
+            let nul = OpenOptions::new().write(true).open("NUL").ok()?;
+
+            // Set stderr to NUL
+            let nul_handle = nul.as_raw_handle() as isize;
+            if SetStdHandle(STD_ERROR_HANDLE, nul_handle) == 0 {
+                return None;
+            }
+
+            // Keep NUL file open (leak it intentionally)
+            std::mem::forget(nul);
+
+            Some(SavedStderr {
+                saved_handle: saved,
+            })
         }
     }
 
-    pub fn restore(_saved: SavedStderr) {
+    pub fn restore(saved: SavedStderr) {
         unsafe {
-            let stderr_handle = libc_stdhandle::stderr();
-            let conout = CString::new("CONOUT$").unwrap();
-            let mode = CString::new("w").unwrap();
-            libc::freopen(conout.as_ptr(), mode.as_ptr(), stderr_handle);
+            SetStdHandle(STD_ERROR_HANDLE, saved.saved_handle);
         }
     }
 }
