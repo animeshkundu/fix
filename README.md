@@ -1,0 +1,119 @@
+# cmd-correct
+
+AI-powered shell command corrector using a fine-tuned local LLM.
+
+## Features
+
+- Corrects typos and common mistakes in shell commands
+- Runs entirely locally - no API calls, no data sent to cloud
+- Fast inference using Metal GPU acceleration on Apple Silicon
+- Supports multiple shells: bash, zsh, fish, powershell, cmd, tcsh
+- Single binary with no runtime dependencies
+
+## Installation
+
+### Build from source
+
+```bash
+cd cmd-correct-cli
+cargo build --release
+```
+
+The binary will be at `cmd-correct-cli/target/release/cmd-correct`.
+
+### Model Setup
+
+Download the GGUF model file and place it in one of these locations:
+
+1. Current working directory
+2. Next to the executable
+3. `~/.config/cmd-correct/`
+4. `~/.local/share/cmd-correct/` (Linux) or `~/Library/Application Support/cmd-correct/` (macOS)
+
+Or specify a custom path with `--model /path/to/model.gguf`.
+
+**Model file**: `cmd-correct-v1-q4km.gguf` (~378 MB, 4-bit quantized)
+
+## Usage
+
+```bash
+# Basic usage - outputs only the corrected command
+cmd-correct "gti status"
+# Output: git status
+
+# With verbose mode to see model loading info
+cmd-correct --verbose "dockr ps"
+
+# Specify shell explicitly
+cmd-correct --shell fish "gut push"
+
+# Provide error message for better context
+cmd-correct --error "command not found: gti" "gti status"
+```
+
+## Options
+
+```
+-e, --error <ERROR>      Error message from the failed command
+-s, --shell <SHELL>      Override shell detection (bash, zsh, fish, powershell, cmd, tcsh)
+-m, --model <MODEL>      Path to the GGUF model file
+    --gpu-layers <N>     Number of GPU layers to offload (default: 99)
+-v, --verbose            Show model loading and inference logs
+-h, --help               Print help
+```
+
+## Shell Integration
+
+### Bash/Zsh
+
+Add to your `.bashrc` or `.zshrc`:
+
+```bash
+fuck() {
+    local cmd=$(fc -ln -1)
+    local corrected=$(cmd-correct "$cmd")
+    echo "Correcting: $cmd -> $corrected"
+    eval "$corrected"
+}
+```
+
+### Fish
+
+Add to `~/.config/fish/functions/fuck.fish`:
+
+```fish
+function fuck
+    set -l cmd (history --max=1)
+    set -l corrected (cmd-correct "$cmd")
+    echo "Correcting: $cmd -> $corrected"
+    eval $corrected
+end
+```
+
+## Related Projects
+
+This project was inspired by these excellent command correction tools:
+
+- **[thefuck](https://github.com/nvbn/thefuck)** - The original shell command corrector by [@nvbn](https://github.com/nvbn). Uses rule-based matching with 100+ built-in rules for common tools. Written in Python.
+
+- **[oops](https://github.com/0atman/oops)** - A Rust rewrite of thefuck by [@0atman](https://github.com/0atman). Faster startup time with the same rule-based approach.
+
+**How cmd-correct differs:**
+- Uses a fine-tuned LLM instead of rule-based matching
+- Can handle novel typos and context that rules might miss
+- Single binary with no Python/Node runtime needed
+- Runs completely offline with local model inference
+
+## Training
+
+For training infrastructure and dataset generation, see the [cmd-correct-train](https://github.com/yourusername/cmd-correct-train) repository.
+
+The model is fine-tuned on ~150k synthetic shell command examples covering:
+- Single command typos (gti → git, dockr → docker)
+- Chained command corrections (git add . && git comit → git add . && git commit)
+- Natural language to shell (list files → ls)
+- Tool-specific patterns (git, docker, npm, cargo, kubectl, etc.)
+
+## License
+
+MIT

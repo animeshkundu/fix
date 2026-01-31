@@ -1,0 +1,41 @@
+# Model files (download separately)
+*.gguf
+models/
+
+# Rust build artifacts
+target/
+
+# Training code (see cmd-correct-train repo)
+src/
+data/
+configs/
+scripts/
+tests/
+adapters/
+pyproject.toml
+requirements.txt
+
+# Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# IDE/tool files
+.claude/
+tools/
+
+# Training docs (see cmd-correct-train repo)
+docs/ADR/001-*.md
+docs/ADR/002-*.md
+docs/ADR/003-*.md
+docs/ADR/005-*.md
+docs/TECH_SPECS.md
+docs/HANDOFF.md
+docs/HISTORY.md
+
+# Temp pip directories
+pip-*/
