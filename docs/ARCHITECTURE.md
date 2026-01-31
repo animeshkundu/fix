@@ -9,7 +9,7 @@ fix is a native Rust CLI that corrects shell commands using local LLM inference.
 │                        User Shell                               │
 │  $ gti status                                                   │
 │  command not found: gti                                         │
-│  $ fuck                        # Shell function calls fix│
+│  $ fix                         # Shell function corrects + runs │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼

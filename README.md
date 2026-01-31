@@ -110,29 +110,56 @@ cargo build --release
 
 ## Shell Integration
 
-### Bash/Zsh
+Set up a shortcut to automatically correct and run your last failed command. After setup, just type `fix` to correct your previous command.
 
-Add to your `.bashrc` or `.zshrc`:
+### Bash
+
+Add to your `~/.bashrc`:
 
 ```bash
-fuck() {
-    local cmd=$(fc -ln -1)
-    local corrected=$(fix "$cmd")
-    echo "Correcting: $cmd -> $corrected"
-    eval "$corrected"
+fix() {
+    if [[ -n "$1" ]]; then
+        command fix "$@"
+    else
+        local cmd=$(fc -ln -1)
+        local corrected=$(command fix "$cmd")
+        echo "Correcting: $cmd -> $corrected"
+        eval "$corrected"
+    fi
+}
+```
+
+### Zsh
+
+Add to your `~/.zshrc`:
+
+```bash
+fix() {
+    if [[ -n "$1" ]]; then
+        command fix "$@"
+    else
+        local cmd=$(fc -ln -1)
+        local corrected=$(command fix "$cmd")
+        echo "Correcting: $cmd -> $corrected"
+        eval "$corrected"
+    fi
 }
 ```
 
 ### Fish
 
-Add to `~/.config/fish/functions/fuck.fish`:
+Add to `~/.config/fish/functions/fix.fish`:
 
 ```fish
-function fuck
-    set -l cmd (history --max=1)
-    set -l corrected (fix "$cmd")
-    echo "Correcting: $cmd -> $corrected"
-    eval $corrected
+function fix --wraps='command fix'
+    if test (count $argv) -gt 0
+        command fix $argv
+    else
+        set -l cmd (history --max=1)
+        set -l corrected (command fix "$cmd")
+        echo "Correcting: $cmd -> $corrected"
+        eval $corrected
+    end
 end
 ```
 
@@ -141,12 +168,47 @@ end
 Add to your `$PROFILE`:
 
 ```powershell
-function fuck {
-    $cmd = (Get-History -Count 1).CommandLine
-    $corrected = fix $cmd
-    Write-Host "Correcting: $cmd -> $corrected"
-    Invoke-Expression $corrected
+function fix {
+    param([Parameter(ValueFromRemainingArguments=$true)]$args)
+    if ($args) {
+        & "$env:LOCALAPPDATA\fix\fix.exe" @args
+    } else {
+        $cmd = (Get-History -Count 1).CommandLine
+        $corrected = & "$env:LOCALAPPDATA\fix\fix.exe" $cmd
+        Write-Host "Correcting: $cmd -> $corrected"
+        Invoke-Expression $corrected
+    }
 }
+```
+
+### Cmd (Windows Command Prompt)
+
+Create a batch file `fix.bat` in a directory on your PATH:
+
+```batch
+@echo off
+if "%~1"=="" (
+    for /f "tokens=*" %%i in ('doskey /history ^| findstr /n "." ^| sort /r ^| findstr "^2:"') do (
+        set "cmd=%%i"
+        goto :run
+    )
+) else (
+    fix.exe %*
+    goto :eof
+)
+:run
+set "cmd=%cmd:~2%"
+for /f "tokens=*" %%j in ('fix.exe "%cmd%"') do set "corrected=%%j"
+echo Correcting: %cmd% -^> %corrected%
+%corrected%
+```
+
+### Tcsh
+
+Add to your `~/.tcshrc`:
+
+```tcsh
+alias fix 'if ("\!*" == "") then; set cmd=`history -h 1`; set corrected=`command fix "$cmd"`; echo "Correcting: $cmd -> $corrected"; eval $corrected; else; command fix \!*; endif'
 ```
 
 ## Model
