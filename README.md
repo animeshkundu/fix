@@ -96,7 +96,7 @@ This project was inspired by these excellent command correction tools:
 
 - **[thefuck](https://github.com/nvbn/thefuck)** - The original shell command corrector by [@nvbn](https://github.com/nvbn). Uses rule-based matching with 100+ built-in rules for common tools. Written in Python.
 
-- **[oops](https://github.com/0atman/oops)** - A Rust rewrite of thefuck by [@0atman](https://github.com/0atman). Faster startup time with the same rule-based approach.
+- **[oops](https://github.com/animeshkundu/oops)** - A Rust rewrite of thefuck with additional rules. Faster startup time with the same rule-based approach.
 
 **How cmd-correct differs:**
 - Uses a fine-tuned LLM instead of rule-based matching
@@ -104,15 +104,33 @@ This project was inspired by these excellent command correction tools:
 - Single binary with no Python/Node runtime needed
 - Runs completely offline with local model inference
 
-## Training
+## Training & Model
 
-For training infrastructure and dataset generation, see the [cmd-correct-train](https://github.com/yourusername/cmd-correct-train) repository.
+For training infrastructure, dataset generation, and model publishing, see:
 
-The model is fine-tuned on ~150k synthetic shell command examples covering:
-- Single command typos (gti → git, dockr → docker)
-- Chained command corrections (git add . && git comit → git add . && git commit)
-- Natural language to shell (list files → ls)
-- Tool-specific patterns (git, docker, npm, cargo, kubectl, etc.)
+**[animeshkundu/oops-llm-training](https://github.com/animeshkundu/oops-llm-training)**
+
+The training repo contains:
+- Synthetic data generation pipeline (~150k examples)
+- LoRA fine-tuning code for Qwen2.5-0.5B
+- GGUF export and quantization scripts
+- Rule extractors that parse [thefuck](https://github.com/nvbn/thefuck) and [oops](https://github.com/animeshkundu/oops) for training data
+
+### Training Data Coverage
+
+| Category | Examples | Description |
+|----------|----------|-------------|
+| Single command typos | 35k | `gti` → `git`, `dockr` → `docker` |
+| Chained commands | 35k | `git add . && git comit` → `git add . && git commit` |
+| Natural language | 50k | `list files` → `ls` |
+| Tool-specific | 30k | git, docker, npm, cargo, kubectl patterns |
+
+### Model Variants
+
+| Model | Size | Format | Use Case |
+|-------|------|--------|----------|
+| cmd-correct-v1-q4km.gguf | 378 MB | GGUF Q4_K_M | Production (recommended) |
+| cmd-correct-v1-f16.gguf | 1.1 GB | GGUF F16 | Higher accuracy |
 
 ## License
 
