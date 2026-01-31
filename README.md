@@ -110,21 +110,29 @@ cargo build --release
 
 ## Shell Integration
 
-Set up a shortcut to automatically correct and run your last failed command. After setup, just type `fix` to correct your previous command.
+The installer can automatically configure shell integration. If you installed manually, add the following to your shell config.
+
+After setup, type `fix` to correct your last command. The corrected command is **pre-filled for review** — press Enter to run it.
 
 ### Bash
 
 Add to your `~/.bashrc`:
 
 ```bash
+# fix - AI-powered shell command corrector
 fix() {
     if [[ -n "$1" ]]; then
         command fix "$@"
     else
-        local cmd=$(fc -ln -1)
-        local corrected=$(command fix "$cmd")
-        echo "Correcting: $cmd -> $corrected"
-        eval "$corrected"
+        local cmd=$(fc -ln -1 | sed 's/^[[:space:]]*//')
+        local corrected=$(command fix "$cmd" 2>/dev/null)
+        if [[ -n "$corrected" && "$corrected" != "$cmd" ]]; then
+            echo "Correcting: $cmd → $corrected"
+            read -e -i "$corrected" -p "» " final_cmd
+            [[ -n "$final_cmd" ]] && eval "$final_cmd"
+        else
+            echo "No correction needed"
+        fi
     fi
 }
 ```
@@ -133,15 +141,20 @@ fix() {
 
 Add to your `~/.zshrc`:
 
-```bash
+```zsh
+# fix - AI-powered shell command corrector
 fix() {
     if [[ -n "$1" ]]; then
         command fix "$@"
     else
-        local cmd=$(fc -ln -1)
-        local corrected=$(command fix "$cmd")
-        echo "Correcting: $cmd -> $corrected"
-        eval "$corrected"
+        local cmd=$(fc -ln -1 | sed 's/^[[:space:]]*//')
+        local corrected=$(command fix "$cmd" 2>/dev/null)
+        if [[ -n "$corrected" && "$corrected" != "$cmd" ]]; then
+            echo "Correcting: $cmd → $corrected"
+            print -z "$corrected"  # Pre-fills the command line
+        else
+            echo "No correction needed"
+        fi
     fi
 }
 ```
@@ -151,14 +164,19 @@ fix() {
 Add to `~/.config/fish/functions/fix.fish`:
 
 ```fish
-function fix --wraps='command fix'
+function fix --description 'Fix the last command'
     if test (count $argv) -gt 0
         command fix $argv
     else
-        set -l cmd (history --max=1)
-        set -l corrected (command fix "$cmd")
-        echo "Correcting: $cmd -> $corrected"
-        eval $corrected
+        set -l cmd (string trim (history --max=1))
+        set -l corrected (command fix "$cmd" 2>/dev/null)
+        if test -n "$corrected" -a "$corrected" != "$cmd"
+            echo "Correcting: $cmd → $corrected"
+            commandline -r "$corrected"  # Pre-fills the command line
+            commandline -f repaint
+        else
+            echo "No correction needed"
+        end
     end
 end
 ```
@@ -168,22 +186,28 @@ end
 Add to your `$PROFILE`:
 
 ```powershell
+# fix - AI-powered shell command corrector
 function fix {
     param([Parameter(ValueFromRemainingArguments=$true)]$args)
+    $fixPath = "$env:LOCALAPPDATA\fix\fix.exe"
     if ($args) {
-        & "$env:LOCALAPPDATA\fix\fix.exe" @args
+        & $fixPath @args
     } else {
-        $cmd = (Get-History -Count 1).CommandLine
-        $corrected = & "$env:LOCALAPPDATA\fix\fix.exe" $cmd
-        Write-Host "Correcting: $cmd -> $corrected"
-        Invoke-Expression $corrected
+        $lastCmd = (Get-History -Count 1).CommandLine
+        $corrected = & $fixPath $lastCmd 2>$null
+        if ($corrected -and $corrected -ne $lastCmd) {
+            Write-Host "Correcting: $lastCmd -> $corrected" -ForegroundColor Cyan
+            [Microsoft.PowerShell.PSConsoleReadLine]::Insert($corrected)
+        } else {
+            Write-Host "No correction needed"
+        }
     }
 }
 ```
 
 ### Cmd (Windows Command Prompt)
 
-For Windows Command Prompt, it's recommended to use PowerShell instead, as cmd.exe has limited history access capabilities. Alternatively, run `fix.exe` directly with the mistyped command as an argument:
+For Windows Command Prompt, use PowerShell instead — cmd.exe has limited history access. Alternatively, run `fix.exe` directly:
 
 ```batch
 fix.exe "gti status"
@@ -197,7 +221,9 @@ Add to your `~/.tcshrc`:
 alias fixlast 'set _cmd = `history -h 1` && set _fix = `fix "$_cmd"` && echo "→ $_fix" && eval "$_fix"'
 ```
 
-Then use `fixlast` to correct and run your last command, or `fix "typo"` for direct correction.
+### Advanced: Auto-suggest on Error (Optional)
+
+For automatic suggestions when commands fail, see the [advanced shell integration docs](https://animeshkundu.github.io/fix/#advanced-shell-integration).
 
 ## Model
 

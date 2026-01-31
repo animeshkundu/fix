@@ -223,9 +223,109 @@ main() {
     fi
   fi
 
+  # Configure shell integration
+  configure_shell_integration
+
   success "Installation complete!"
   echo ""
   echo "Run '${BINARY} --help' to get started."
+}
+
+# Shell integration configuration
+configure_shell_integration() {
+  local shell_name=$(basename "$SHELL")
+  local config_file=""
+  local fix_func=""
+
+  case "$shell_name" in
+    bash)
+      config_file="$HOME/.bashrc"
+      fix_func='
+# fix - AI-powered shell command corrector
+fix() {
+    if [[ -n "$1" ]]; then
+        command fix "$@"
+    else
+        local cmd=$(fc -ln -1 | sed '\''s/^[[:space:]]*//'\''')
+        local corrected=$(command fix "$cmd" 2>/dev/null)
+        if [[ -n "$corrected" && "$corrected" != "$cmd" ]]; then
+            echo "Correcting: $cmd → $corrected"
+            read -e -i "$corrected" -p "» " final_cmd
+            [[ -n "$final_cmd" ]] && eval "$final_cmd"
+        else
+            echo "No correction needed"
+        fi
+    fi
+}'
+      ;;
+    zsh)
+      config_file="$HOME/.zshrc"
+      fix_func='
+# fix - AI-powered shell command corrector
+fix() {
+    if [[ -n "$1" ]]; then
+        command fix "$@"
+    else
+        local cmd=$(fc -ln -1 | sed '\''s/^[[:space:]]*//'\''')
+        local corrected=$(command fix "$cmd" 2>/dev/null)
+        if [[ -n "$corrected" && "$corrected" != "$cmd" ]]; then
+            echo "Correcting: $cmd → $corrected"
+            print -z "$corrected"
+        else
+            echo "No correction needed"
+        fi
+    fi
+}'
+      ;;
+    fish)
+      config_file="$HOME/.config/fish/functions/fix.fish"
+      fix_func='function fix --description '\''Fix the last command'\''
+    if test (count $argv) -gt 0
+        command fix $argv
+    else
+        set -l cmd (string trim (history --max=1))
+        set -l corrected (command fix "$cmd" 2>/dev/null)
+        if test -n "$corrected" -a "$corrected" != "$cmd"
+            echo "Correcting: $cmd → $corrected"
+            commandline -r "$corrected"
+            commandline -f repaint
+        else
+            echo "No correction needed"
+        end
+    end
+end'
+      ;;
+    *)
+      return
+      ;;
+  esac
+
+  # Check if already configured
+  if [ -f "$config_file" ] && grep -q "fix - AI-powered shell command corrector" "$config_file" 2>/dev/null; then
+    info "Shell integration already configured in $config_file"
+    return
+  fi
+
+  echo ""
+  info "Shell integration"
+  echo "  Add a 'fix' function to correct your last command."
+  echo "  After setup, just type 'fix' to correct and review before running."
+  echo ""
+  printf "  Configure shell integration in ${config_file}? [Y/n] "
+  read -r REPLY
+  echo ""
+
+  if [ "$REPLY" != "n" ] && [ "$REPLY" != "N" ]; then
+    # Create directory for fish if needed
+    if [ "$shell_name" = "fish" ]; then
+      mkdir -p "$(dirname "$config_file")"
+      echo "$fix_func" > "$config_file"
+    else
+      echo "$fix_func" >> "$config_file"
+    fi
+    success "Shell integration configured in $config_file"
+    echo "  Restart your shell or run: source $config_file"
+  fi
 }
 
 main

@@ -117,6 +117,61 @@ try {
     Write-Host "Test failed: $_"
 }
 
+# Configure shell integration
+$profilePath = $PROFILE.CurrentUserCurrentHost
+$fixFunction = @'
+
+# fix - AI-powered shell command corrector
+function fix {
+    param([Parameter(ValueFromRemainingArguments=$true)]$args)
+    $fixPath = "$env:LOCALAPPDATA\fix\fix.exe"
+    if ($args) {
+        & $fixPath @args
+    } else {
+        $lastCmd = (Get-History -Count 1).CommandLine
+        $corrected = & $fixPath $lastCmd 2>$null
+        if ($corrected -and $corrected -ne $lastCmd) {
+            Write-Host "Correcting: $lastCmd -> $corrected" -ForegroundColor Cyan
+            [Microsoft.PowerShell.PSConsoleReadLine]::Insert($corrected)
+        } else {
+            Write-Host "No correction needed"
+        }
+    }
+}
+'@
+
+# Check if already configured
+$alreadyConfigured = $false
+if (Test-Path $profilePath) {
+    $profileContent = Get-Content $profilePath -Raw -ErrorAction SilentlyContinue
+    if ($profileContent -match "fix - AI-powered shell command corrector") {
+        $alreadyConfigured = $true
+        Write-Info "Shell integration already configured in $profilePath"
+    }
+}
+
+if (-not $alreadyConfigured) {
+    Write-Host ""
+    Write-Info "Shell integration"
+    Write-Host "  Add a 'fix' function to correct your last command."
+    Write-Host "  After setup, just type 'fix' to correct and review before running."
+    Write-Host ""
+    $response = Read-Host "  Configure shell integration in PowerShell profile? [Y/n]"
+
+    if ($response -ne "n" -and $response -ne "N") {
+        # Create profile directory if needed
+        $profileDir = Split-Path $profilePath -Parent
+        if (-not (Test-Path $profileDir)) {
+            New-Item -ItemType Directory -Path $profileDir -Force | Out-Null
+        }
+
+        # Append to profile
+        Add-Content -Path $profilePath -Value $fixFunction
+        Write-Success "Shell integration configured in $profilePath"
+        Write-Host "  Restart PowerShell to use the 'fix' function."
+    }
+}
+
 Write-Host ""
 Write-Success "Installation complete!"
 Write-Host ""
