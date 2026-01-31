@@ -46,15 +46,15 @@ Implement cross-platform support using:
 fn config_dir() -> PathBuf {
     dirs::config_dir()
         .unwrap_or_else(|| env::current_dir().unwrap_or_else(|_| PathBuf::from(".")))
-        .join("cmd-correct")
+        .join("fix")
 }
 ```
 
 | Platform | Result |
 |----------|--------|
-| macOS | `~/Library/Application Support/cmd-correct/` |
-| Linux | `~/.config/cmd-correct/` |
-| Windows | `C:\Users\<user>\AppData\Roaming\cmd-correct\` |
+| macOS | `~/Library/Application Support/fix/` |
+| Linux | `~/.config/fix/` |
+| Windows | `C:\Users\<user>\AppData\Roaming\fix\` |
 
 ### Shell Detection
 

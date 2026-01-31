@@ -1,5 +1,5 @@
 [package]
-name = "cmd-correct"
+name = "fix"
 version = "0.0.1"
 edition = "2021"
 description = "AI-powered shell command corrector"

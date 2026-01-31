@@ -15,7 +15,7 @@ Users need easy access to trained models without manual download and configurati
 
 Use **HuggingFace Hub** for model distribution with automatic download in the CLI.
 
-Repository: `animeshkundu/cmd-correct`
+Repository: `animeshkundu/fix`
 
 ## Rationale
 
@@ -52,7 +52,7 @@ Examples:
 
 List models:
 ```
-GET https://huggingface.co/api/models/animeshkundu/cmd-correct/tree/main
+GET https://huggingface.co/api/models/animeshkundu/fix/tree/main
 ```
 
 Download model:
@@ -63,7 +63,7 @@ GET https://huggingface.co/{repo}/resolve/main/{filename}
 ### CLI Integration
 
 ```rust
-const HF_REPO: &str = "animeshkundu/cmd-correct";
+const HF_REPO: &str = "animeshkundu/fix";
 const DEFAULT_MODEL: &str = "qwen3-correct-0.6B";
 
 // Dynamic model list
@@ -83,16 +83,16 @@ fn download_model(model_name: &str) -> Result<PathBuf, String> {
 
 ```bash
 # First run - auto-downloads default model
-$ cmd-correct "gti status"
+$ fix "gti status"
 Downloading qwen3-correct-0.6B...
 [========================================] 378 MB / 378 MB
 git status
 
 # List available models
-$ cmd-correct --list-models
+$ fix --list-models
 Available models:
   qwen3-correct-0.6B  (378 MB) [current]
 
 # Switch models (persistent)
-$ cmd-correct --use-model qwen3-correct-1.7B
+$ fix --use-model qwen3-correct-1.7B
 ```

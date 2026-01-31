@@ -17,8 +17,8 @@ const HF_REPO: &str = "animeshkundu/cmd-correct";
 const DEFAULT_MODEL: &str = "qwen3-correct-0.6B";
 
 #[derive(Parser, Debug)]
-#[command(name = "cmd-correct")]
-#[command(about = "AI-powered shell command corrector", long_about = None)]
+#[command(name = "fix")]
+#[command(about = "Fix shell command typos using a local LLM", long_about = None)]
 struct Args {
     /// The failed command to correct (optional for management commands)
     #[arg(num_args = 0..)]
@@ -83,7 +83,7 @@ struct AvailableModel {
 fn config_dir() -> PathBuf {
     dirs::config_dir()
         .unwrap_or_else(|| env::current_dir().unwrap_or_else(|_| PathBuf::from(".")))
-        .join("cmd-correct")
+        .join("fix")
 }
 
 fn config_path() -> PathBuf {
@@ -409,10 +409,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // For inference, command is required
     if args.command.is_empty() {
-        eprintln!("Usage: cmd-correct <command>");
-        eprintln!("       cmd-correct --list-models");
-        eprintln!("       cmd-correct --use-model <name>");
-        eprintln!("       cmd-correct --show-config");
+        eprintln!("Usage: fix <command>");
+        eprintln!("       fix --list-models");
+        eprintln!("       fix --use-model <name>");
+        eprintln!("       fix --show-config");
         std::process::exit(1);
     }
 

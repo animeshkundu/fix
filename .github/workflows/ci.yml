@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: cmd-correct-cli
+        working-directory: fix-cli
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -23,7 +23,7 @@ jobs:
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: cmd-correct-cli
+          workspaces: fix-cli
       - name: Check formatting
         run: cargo fmt --check
       - name: Clippy
@@ -46,13 +46,13 @@ jobs:
             features: ""
     defaults:
       run:
-        working-directory: cmd-correct-cli
+        working-directory: fix-cli
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: cmd-correct-cli
+          workspaces: fix-cli
       - name: Build
         run: cargo build --release ${{ matrix.features && format('--features {0}', matrix.features) || '' }}
 
@@ -61,12 +61,12 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: cmd-correct-cli
+        working-directory: fix-cli
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: cmd-correct-cli
+          workspaces: fix-cli
       - name: Run tests
         run: cargo test

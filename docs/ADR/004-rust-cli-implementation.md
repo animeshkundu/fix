@@ -35,11 +35,11 @@ Features:
 
 ```rust
 // Model search locations (in order)
-1. Current directory: cmd-correct-v1-q4km.gguf
+1. Current directory: fix-v1-q4km.gguf
 2. Next to executable
-3. ~/.config/cmd-correct/
-4. ~/.local/share/cmd-correct/ (Linux)
-5. ~/Library/Application Support/cmd-correct/ (macOS)
+3. ~/.config/fix/
+4. ~/.local/share/fix/ (Linux)
+5. ~/Library/Application Support/fix/ (macOS)
 
 // GPU configuration
 n_gpu_layers: 99 (full GPU offload)

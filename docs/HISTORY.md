@@ -1,4 +1,4 @@
-# Development History - oops-llm-cli
+# Development History - fix
 
 ## January 2025
 
@@ -6,7 +6,7 @@
 
 Added automatic model download and management:
 
-- **Model Repository**: Published to `animeshkundu/cmd-correct`
+- **Model Repository**: Published to `animeshkundu/fix`
 - **Auto-download**: CLI downloads model on first use if not present
 - **Dynamic model list**: `--list-models` queries HuggingFace API for available models
 - **Persistent config**: `--use-model` downloads and sets default (saved to config.json)

@@ -1,11 +1,11 @@
 #!/bin/sh
-# cmd-correct installer
-# Usage: curl -fsSL https://animeshkundu.github.io/oops-llm-cli/install.sh | sh
+# fix installer
+# Usage: curl -fsSL https://animeshkundu.github.io/fix/install.sh | sh
 
 set -e
 
-REPO="animeshkundu/oops-llm-cli"
-BINARY="cmd-correct"
+REPO="animeshkundu/fix"
+BINARY="fix"
 INSTALL_DIR="${HOME}/.local/bin"
 
 # Colors (if terminal supports it)

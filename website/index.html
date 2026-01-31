@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>cmd-correct - Fix shell typos instantly</title>
+  <title>fix - Fix shell typos instantly</title>
   <meta name="description" content="A local AI that fixes your shell command typos. No API keys, no internet required.">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header>
     <div class="container">
-      <h1>cmd-correct</h1>
-      <a href="https://github.com/animeshkundu/oops-llm-cli" class="github-link" aria-label="View on GitHub">
+      <h1>fix</h1>
+      <a href="https://github.com/animeshkundu/fix" class="github-link" aria-label="View on GitHub">
         <svg height="24" viewBox="0 0 16 16" width="24" fill="currentColor">
           <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
         </svg>
@@ -25,7 +25,7 @@
         <p class="tagline">Fix shell typos instantly.</p>
         <div class="demo">
           <div class="terminal">
-            <span class="prompt">$</span> cmd-correct "gti status"
+            <span class="prompt">$</span> fix "gti status"
             <br>
             <span class="output">git status</span>
           </div>
@@ -44,7 +44,7 @@
         <div class="install-content">
           <div class="tab-content active" id="script">
             <div class="code-block">
-              <code>curl -fsSL https://animeshkundu.github.io/oops-llm-cli/install.sh | sh</code>
+              <code>curl -fsSL https://animeshkundu.github.io/fix/install.sh | sh</code>
               <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy to clipboard">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
@@ -55,7 +55,7 @@
           </div>
           <div class="tab-content" id="cargo">
             <div class="code-block">
-              <code>cargo install cmd-correct</code>
+              <code>cargo install fix</code>
               <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy to clipboard">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
@@ -66,12 +66,12 @@
             <p class="note">Requires Rust toolchain. On macOS, add <code>--features metal</code> for GPU acceleration.</p>
           </div>
           <div class="tab-content" id="manual">
-            <p>Download the latest binary from <a href="https://github.com/animeshkundu/oops-llm-cli/releases">GitHub Releases</a>.</p>
+            <p>Download the latest binary from <a href="https://github.com/animeshkundu/fix/releases">GitHub Releases</a>.</p>
             <ul>
-              <li><code>cmd-correct-aarch64-apple-darwin.tar.gz</code> - macOS Apple Silicon</li>
-              <li><code>cmd-correct-x86_64-apple-darwin.tar.gz</code> - macOS Intel</li>
-              <li><code>cmd-correct-x86_64-unknown-linux-gnu.tar.gz</code> - Linux x64</li>
-              <li><code>cmd-correct-x86_64-pc-windows-msvc.zip</code> - Windows x64</li>
+              <li><code>fix-aarch64-apple-darwin.tar.gz</code> - macOS Apple Silicon</li>
+              <li><code>fix-x86_64-apple-darwin.tar.gz</code> - macOS Intel</li>
+              <li><code>fix-x86_64-unknown-linux-gnu.tar.gz</code> - Linux x64</li>
+              <li><code>fix-x86_64-pc-windows-msvc.zip</code> - Windows x64</li>
             </ul>
           </div>
         </div>
@@ -97,7 +97,7 @@
           <thead>
             <tr>
               <th>You typed</th>
-              <th>cmd-correct says</th>
+              <th>fix says</th>
             </tr>
           </thead>
           <tbody>
@@ -116,10 +116,10 @@
       <div class="container">
         <h2>Usage</h2>
         <div class="terminal wide">
-<pre>$ cmd-correct --help
+<pre>$ fix --help
 Fix shell command typos using a local LLM
 
-Usage: cmd-correct [OPTIONS] [COMMAND]...
+Usage: fix [OPTIONS] [COMMAND]...
 
 Arguments:
   [COMMAND]...  The command to correct
@@ -141,8 +141,8 @@ Options:
     <div class="container">
       <p>
         MIT License &middot;
-        <a href="https://github.com/animeshkundu/oops-llm-cli">GitHub</a> &middot;
-        <a href="https://huggingface.co/animeshkundu/cmd-correct">Model</a>
+        <a href="https://github.com/animeshkundu/fix">GitHub</a> &middot;
+        <a href="https://huggingface.co/animeshkundu/fix">Model</a>
       </p>
     </div>
   </footer>

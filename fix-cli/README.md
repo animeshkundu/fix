@@ -1,4 +1,4 @@
-# cmd-correct
+# fix
 
 AI-powered shell command corrector using a fine-tuned local LLM.
 
@@ -17,7 +17,7 @@ This project was inspired by and can be used alongside:
 
 - **[oops](https://github.com/0atman/oops)** - A Rust rewrite of thefuck with improved performance. Contains 30+ rule-based correction modules for tools like git, docker, npm, cargo, and more.
 
-cmd-correct takes a different approach by using a fine-tuned LLM for corrections, which can handle novel mistakes and context that rule-based systems might miss.
+fix takes a different approach by using a fine-tuned LLM for corrections, which can handle novel mistakes and context that rule-based systems might miss.
 
 ## Prerequisites
 
@@ -34,20 +34,20 @@ cmd-correct takes a different approach by using a fine-tuned LLM for corrections
 cargo build --release
 ```
 
-The binary will be at `target/release/cmd-correct`.
+The binary will be at `target/release/fix`.
 
 ### Model
 
 The CLI requires a GGUF-format model file trained for command correction. The model is a fine-tuned Qwen2.5-0.5B quantized to 4-bit (Q4_K_M).
 
-**Model file**: `cmd-correct-v1-q4km.gguf` (~378 MB)
+**Model file**: `fix-v1-q4km.gguf` (~378 MB)
 
 Place the model in one of these locations (searched in order):
 
 1. Current directory
 2. Next to the executable
-3. `~/.config/cmd-correct/`
-4. `~/.local/share/cmd-correct/` (Linux) or `~/Library/Application Support/cmd-correct/` (macOS)
+3. `~/.config/fix/`
+4. `~/.local/share/fix/` (Linux) or `~/Library/Application Support/fix/` (macOS)
 
 Or specify a custom path with `--model /path/to/model.gguf`.
 
@@ -55,20 +55,20 @@ Or specify a custom path with `--model /path/to/model.gguf`.
 
 ```bash
 # Basic usage - outputs only the corrected command
-cmd-correct "gti status"
+fix "gti status"
 # Output: git status
 
 # With verbose mode to see model loading info
-cmd-correct --verbose "dockr ps"
+fix --verbose "dockr ps"
 
 # Specify shell explicitly
-cmd-correct --shell fish "gut push"
+fix --shell fish "gut push"
 
 # Provide error message for better context
-cmd-correct --error "command not found: gti" "gti status"
+fix --error "command not found: gti" "gti status"
 
 # Specify custom model path
-cmd-correct --model /path/to/model.gguf "gti status"
+fix --model /path/to/model.gguf "gti status"
 ```
 
 ## Options
@@ -92,7 +92,7 @@ Add to your `.bashrc` or `.zshrc`:
 # Correct last command with 'fuck'
 fuck() {
     local cmd=$(fc -ln -1)
-    local corrected=$(cmd-correct "$cmd")
+    local corrected=$(fix "$cmd")
     echo "Correcting: $cmd -> $corrected"
     eval "$corrected"
 }
@@ -105,7 +105,7 @@ Add to your `~/.config/fish/functions/fuck.fish`:
 ```fish
 function fuck
     set -l cmd (history --max=1)
-    set -l corrected (cmd-correct "$cmd")
+    set -l corrected (fix "$cmd")
     echo "Correcting: $cmd -> $corrected"
     eval $corrected
 end

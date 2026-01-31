@@ -1,7 +1,7 @@
-# AGENTS.md - AI Agent Guide for cmd-correct
+# AGENTS.md - AI Agent Guide for fix
 
 ## Project Summary
-**cmd-correct** is a shell command correction system using a fine-tuned LLM (Qwen2.5-0.5B / Qwen3-0.6B) with dual inference backends (MLX and llama.cpp).
+**fix** is a shell command correction system using a fine-tuned LLM (Qwen2.5-0.5B / Qwen3-0.6B) with dual inference backends (MLX and llama.cpp).
 
 ## Repository Map
 
@@ -14,7 +14,7 @@ src/inference/
 
 ### Rust Native CLI
 ```
-cmd-correct-cli/
+fix-cli/
 ├── src/main.rs     # Rust implementation with Metal GPU (~565 lines)
 └── Cargo.toml      # Dependencies: llama-cpp-2, clap, dirs, reqwest, indicatif, serde
 ```
@@ -49,14 +49,14 @@ src/data_generation/
 ### Models & Adapters
 ```
 models/
-├── cmd-correct-v1-q4km.gguf           # Production (379MB, Q4_K_M)
-├── cmd-correct-v1-qwen3-Q4_K_M.gguf   # Qwen3 version (378MB)
-├── qwen3-cmd-correct-merged/           # MLX format
+├── fix-v1-q4km.gguf           # Production (379MB, Q4_K_M)
+├── fix-v1-qwen3-Q4_K_M.gguf   # Qwen3 version (378MB)
+├── qwen3-fix-merged/           # MLX format
 └── imatrix.gguf                        # Importance matrix
 
 adapters/
 ├── adapter_config.json                 # Qwen2.5 config
-└── qwen3-cmd-correct/                  # Qwen3 LoRA (checkpoints at 500-3000)
+└── qwen3-fix/                  # Qwen3 LoRA (checkpoints at 500-3000)
 ```
 
 ### Configuration
@@ -100,34 +100,34 @@ max_tokens=128, temperature=0.1, top_p=0.9, repetition_penalty=1.1
 | Add shell support | `src/data_generation/templates/` + `base_generator.py` SHELL_WEIGHTS |
 | Modify CLI commands | `src/inference/cli.py` |
 | Change model paths | `src/training/config.py` or CLI flags |
-| Rust CLI changes | `cmd-correct-cli/src/main.rs` |
-| HuggingFace repo | `cmd-correct-cli/src/main.rs` → `HF_REPO` constant |
-| Default model | `cmd-correct-cli/src/main.rs` → `DEFAULT_MODEL` constant |
+| Rust CLI changes | `fix-cli/src/main.rs` |
+| HuggingFace repo | `fix-cli/src/main.rs` → `HF_REPO` constant |
+| Default model | `fix-cli/src/main.rs` → `DEFAULT_MODEL` constant |
 
 ## HuggingFace Integration (Rust CLI)
 
-**Repository**: `animeshkundu/cmd-correct`
+**Repository**: `animeshkundu/fix`
 
 ### CLI Model Management
 
 ```bash
 # List available models (queries HF API)
-cmd-correct --list-models
+fix --list-models
 
 # Download and set default (persistent)
-cmd-correct --use-model qwen3-correct-0.6B
+fix --use-model qwen3-correct-0.6B
 
 # Show config
-cmd-correct --show-config
+fix --show-config
 ```
 
 ### Config Locations
 
 | Platform | Path |
 |----------|------|
-| macOS | `~/Library/Application Support/cmd-correct/` |
-| Linux | `~/.config/cmd-correct/` |
-| Windows | `%APPDATA%\cmd-correct\` |
+| macOS | `~/Library/Application Support/fix/` |
+| Linux | `~/.config/fix/` |
+| Windows | `%APPDATA%\fix\` |
 
 ### Key Functions (main.rs)
 
@@ -145,7 +145,7 @@ cmd-correct --show-config
 python -m src.inference.cli correct bash "gti status"
 
 # Rust CLI
-cd cmd-correct-cli && cargo run -- "gti status"
+cd fix-cli && cargo run -- "gti status"
 
 # Training
 python -m mlx_lm.lora --config configs/train_qwen3.yaml
@@ -168,4 +168,4 @@ JSONL with ChatML messages array: system → user (incorrect) → assistant (cor
 
 - **Training**: `../oops-llm-training/` - Data generation and LoRA fine-tuning
 - **Pipeline**: `../shellfix/` - Automated DVC pipeline for end-to-end training
-- **Models**: [animeshkundu/cmd-correct](https://huggingface.co/animeshkundu/cmd-correct) - HuggingFace model repository
+- **Models**: [animeshkundu/fix](https://huggingface.co/animeshkundu/fix) - HuggingFace model repository

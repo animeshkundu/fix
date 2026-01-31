@@ -1,16 +1,16 @@
-# cmd-correct
+# fix
 
 AI-powered shell command corrector using a fine-tuned local LLM.
 
-**[Website](https://animeshkundu.github.io/oops-llm-cli/)** | **[Model](https://huggingface.co/animeshkundu/cmd-correct)**
+**[Website](https://animeshkundu.github.io/fix/)** | **[Model](https://huggingface.co/animeshkundu/cmd-correct)**
 
 ## Quick Install
 
 ```bash
-curl -fsSL https://animeshkundu.github.io/oops-llm-cli/install.sh | sh
+curl -fsSL https://animeshkundu.github.io/fix/install.sh | sh
 ```
 
-Or download from [GitHub Releases](https://github.com/animeshkundu/oops-llm-cli/releases).
+Or download from [GitHub Releases](https://github.com/animeshkundu/fix/releases).
 
 ## Features
 
@@ -25,24 +25,24 @@ Or download from [GitHub Releases](https://github.com/animeshkundu/oops-llm-cli/
 ### One-liner (macOS/Linux)
 
 ```bash
-curl -fsSL https://animeshkundu.github.io/oops-llm-cli/install.sh | sh
+curl -fsSL https://animeshkundu.github.io/fix/install.sh | sh
 ```
 
 ### Pre-built binaries
 
-Download from [GitHub Releases](https://github.com/animeshkundu/oops-llm-cli/releases):
+Download from [GitHub Releases](https://github.com/animeshkundu/fix/releases):
 
 | Platform | Binary |
 |----------|--------|
-| macOS Apple Silicon | `cmd-correct-aarch64-apple-darwin.tar.gz` |
-| macOS Intel | `cmd-correct-x86_64-apple-darwin.tar.gz` |
-| Linux x64 | `cmd-correct-x86_64-unknown-linux-gnu.tar.gz` |
-| Windows x64 | `cmd-correct-x86_64-pc-windows-msvc.zip` |
+| macOS Apple Silicon | `fix-aarch64-apple-darwin.tar.gz` |
+| macOS Intel | `fix-x86_64-apple-darwin.tar.gz` |
+| Linux x64 | `fix-x86_64-unknown-linux-gnu.tar.gz` |
+| Windows x64 | `fix-x86_64-pc-windows-msvc.zip` |
 
 ### Build from source
 
 ```bash
-cd cmd-correct-cli
+cd fix-cli
 
 # macOS with Metal GPU (recommended for Apple Silicon)
 cargo build --release --features metal
@@ -54,52 +54,52 @@ cargo build --release --features cuda
 cargo build --release
 ```
 
-The binary will be at `cmd-correct-cli/target/release/cmd-correct`.
+The binary will be at `fix-cli/target/release/fix`.
 
 ### Model Setup
 
 **Automatic (Recommended)**: The CLI automatically downloads the model from HuggingFace on first use:
 
 ```bash
-cmd-correct "gti status"
+fix "gti status"
 # Downloads qwen3-correct-0.6B.gguf (~378 MB) on first run
 ```
 
 **Manual**: Or specify a custom path with `--model /path/to/model.gguf`.
 
-**Model Repository**: [animeshkundu/cmd-correct](https://huggingface.co/animeshkundu/cmd-correct)
+**Model Repository**: [animeshkundu/fix](https://huggingface.co/animeshkundu/cmd-correct)
 
 ## Usage
 
 ```bash
 # Basic usage - outputs only the corrected command
-cmd-correct "gti status"
+fix "gti status"
 # Output: git status
 
 # With verbose mode to see model loading info
-cmd-correct --verbose "dockr ps"
+fix --verbose "dockr ps"
 
 # Specify shell explicitly
-cmd-correct --shell fish "gut push"
+fix --shell fish "gut push"
 
 # Provide error message for better context
-cmd-correct --error "command not found: gti" "gti status"
+fix --error "command not found: gti" "gti status"
 ```
 
 ### Model Management
 
 ```bash
 # List available models from HuggingFace
-cmd-correct --list-models
+fix --list-models
 
 # Download and set a different model as default
-cmd-correct --use-model qwen3-correct-0.6B
+fix --use-model qwen3-correct-0.6B
 
 # Show current configuration
-cmd-correct --show-config
+fix --show-config
 
 # Force re-download of current model
-cmd-correct --update "gti status"
+fix --update "gti status"
 ```
 
 ## Options
@@ -126,7 +126,7 @@ Add to your `.bashrc` or `.zshrc`:
 ```bash
 fuck() {
     local cmd=$(fc -ln -1)
-    local corrected=$(cmd-correct "$cmd")
+    local corrected=$(fix "$cmd")
     echo "Correcting: $cmd -> $corrected"
     eval "$corrected"
 }
@@ -139,7 +139,7 @@ Add to `~/.config/fish/functions/fuck.fish`:
 ```fish
 function fuck
     set -l cmd (history --max=1)
-    set -l corrected (cmd-correct "$cmd")
+    set -l corrected (fix "$cmd")
     echo "Correcting: $cmd -> $corrected"
     eval $corrected
 end
@@ -153,7 +153,7 @@ This project was inspired by these excellent command correction tools:
 
 - **[oops](https://github.com/animeshkundu/oops)** - A Rust rewrite of thefuck with additional rules. Faster startup time with the same rule-based approach.
 
-**How cmd-correct differs:**
+**How fix differs:**
 - Uses a fine-tuned LLM instead of rule-based matching
 - Can handle novel typos and context that rules might miss
 - Single binary with no Python/Node runtime needed
@@ -186,7 +186,7 @@ The training repo contains:
 |-------|------|--------|----------|
 | qwen3-correct-0.6B.gguf | 378 MB | GGUF Q4_K_M | Production (recommended) |
 
-Models are hosted at [animeshkundu/cmd-correct](https://huggingface.co/animeshkundu/cmd-correct) and automatically downloaded on first use.
+Models are hosted at [animeshkundu/fix](https://huggingface.co/animeshkundu/cmd-correct) and automatically downloaded on first use.
 
 ## License
 

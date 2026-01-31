@@ -1,4 +1,4 @@
-# Developer Handoff - oops-llm-cli
+# Developer Handoff - fix
 
 ## What This Does
 
@@ -11,29 +11,29 @@ A Rust CLI that corrects shell command typos using a local LLM. Takes a mistyped
 cargo build --release --features metal
 
 # Test it
-./target/release/cmd-correct "gti status"
+./target/release/fix "gti status"
 # Output: git status
 
 # List available models
-./target/release/cmd-correct --list-models
+./target/release/fix --list-models
 
 # Download and set a model as default
-./target/release/cmd-correct --use-model qwen3-correct-0.6B
+./target/release/fix --use-model qwen3-correct-0.6B
 ```
 
 ## Key Files
 
 | File | Purpose |
 |------|---------|
-| `cmd-correct-cli/src/main.rs` | All CLI logic (~565 lines) |
-| `cmd-correct-cli/Cargo.toml` | Dependencies and features |
+| `fix-cli/src/main.rs` | All CLI logic (~565 lines) |
+| `fix-cli/Cargo.toml` | Dependencies and features |
 
 ## Architecture Overview
 
 ```
 User Input → Shell Detection → Model Loading → Inference → Output
                                     ↓
-                         Config (~/.config/cmd-correct/)
+                         Config (~/.config/fix/)
                                     ↓
                          HuggingFace Download (if needed)
 ```
@@ -61,9 +61,9 @@ User Input → Shell Detection → Model Loading → Inference → Output
 
 | Platform | Path |
 |----------|------|
-| macOS | `~/Library/Application Support/cmd-correct/` |
-| Linux | `~/.config/cmd-correct/` |
-| Windows | `%APPDATA%\cmd-correct\` |
+| macOS | `~/Library/Application Support/fix/` |
+| Linux | `~/.config/fix/` |
+| Windows | `%APPDATA%\fix\` |
 
 ## Build Commands
 
@@ -83,7 +83,7 @@ cargo build --release
 - Added HuggingFace model auto-download
 - Added `--list-models`, `--use-model`, `--show-config` flags
 - Implemented cross-platform config paths
-- Model published to `animeshkundu/cmd-correct`
+- Model published to `animeshkundu/fix`
 
 ## Related Repos
 

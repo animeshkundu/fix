@@ -2,19 +2,19 @@
 
 ## System Design
 
-cmd-correct is a native Rust CLI that corrects shell commands using local LLM inference.
+fix is a native Rust CLI that corrects shell commands using local LLM inference.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                        User Shell                               │
 │  $ gti status                                                   │
 │  command not found: gti                                         │
-│  $ fuck                        # Shell function calls cmd-correct│
+│  $ fuck                        # Shell function calls fix│
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                      cmd-correct CLI                            │
+│                      fix CLI                            │
 ├─────────────────────────────────────────────────────────────────┤
 │  - Shell detection (SHELL env, platform detection)             │
 │  - Prompt formatting (ChatML format)                           │
@@ -51,8 +51,8 @@ cmd-correct is a native Rust CLI that corrects shell commands using local LLM in
 ## Directory Structure
 
 ```
-cmd-correct/
-├── cmd-correct-cli/              # Rust native CLI
+fix/
+├── fix-cli/              # Rust native CLI
 │   ├── src/main.rs              # CLI implementation
 │   ├── Cargo.toml               # Dependencies
 │   └── Cargo.lock               # Locked versions
@@ -159,9 +159,9 @@ The CLI uses this flow to find or download models:
 
 | Platform | Path |
 |----------|------|
-| macOS | `~/Library/Application Support/cmd-correct/` |
-| Linux | `~/.config/cmd-correct/` |
-| Windows | `%APPDATA%\cmd-correct\` |
+| macOS | `~/Library/Application Support/fix/` |
+| Linux | `~/.config/fix/` |
+| Windows | `%APPDATA%\fix\` |
 
 ### Config File Structure
 
@@ -174,7 +174,7 @@ The CLI uses this flow to find or download models:
 
 ### HuggingFace Integration
 
-**Repository**: `animeshkundu/cmd-correct`
+**Repository**: `animeshkundu/fix`
 
 ```
                     ┌─────────────────────────┐

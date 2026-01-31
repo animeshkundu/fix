@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'cmd-correct-cli/**'
+      - 'fix-cli/**'
       - '.github/workflows/release.yml'
   workflow_dispatch:
     inputs:
@@ -77,7 +77,7 @@ jobs:
 
       - name: Update Cargo.toml version
         run: |
-          cd cmd-correct-cli
+          cd fix-cli
           sed -i 's/^version = ".*"/version = "${{ steps.bump.outputs.version }}"/' Cargo.toml
           cat Cargo.toml | grep -A2 '^\[package\]'
 
@@ -85,7 +85,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add cmd-correct-cli/Cargo.toml
+          git add fix-cli/Cargo.toml
           git diff --cached --quiet || git commit -m "chore: bump version to ${{ steps.bump.outputs.version }}"
           git tag -a "${{ steps.bump.outputs.tag }}" -m "Release ${{ steps.bump.outputs.tag }}"
           git push origin main --follow-tags
@@ -116,7 +116,7 @@ jobs:
             archive: zip
     defaults:
       run:
-        working-directory: cmd-correct-cli
+        working-directory: fix-cli
     steps:
       - uses: actions/checkout@v4
         with:
@@ -128,7 +128,7 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: cmd-correct-cli
+          workspaces: fix-cli
 
       - name: Build
         run: cargo build --release --target ${{ matrix.target }} ${{ matrix.features && format('--features {0}', matrix.features) || '' }}
@@ -137,25 +137,25 @@ jobs:
         if: matrix.archive == 'tar.gz'
         run: |
           cd target/${{ matrix.target }}/release
-          tar -czvf ../../../cmd-correct-${{ matrix.target }}.tar.gz cmd-correct
+          tar -czvf ../../../fix-${{ matrix.target }}.tar.gz fix
           cd ../../..
-          shasum -a 256 cmd-correct-${{ matrix.target }}.tar.gz > cmd-correct-${{ matrix.target }}.tar.gz.sha256
+          shasum -a 256 fix-${{ matrix.target }}.tar.gz > fix-${{ matrix.target }}.tar.gz.sha256
 
       - name: Package (Windows)
         if: matrix.archive == 'zip'
         shell: pwsh
         run: |
           cd target/${{ matrix.target }}/release
-          Compress-Archive -Path cmd-correct.exe -DestinationPath ../../../cmd-correct-${{ matrix.target }}.zip
+          Compress-Archive -Path fix.exe -DestinationPath ../../../fix-${{ matrix.target }}.zip
           cd ../../..
-          (Get-FileHash cmd-correct-${{ matrix.target }}.zip -Algorithm SHA256).Hash.ToLower() + "  cmd-correct-${{ matrix.target }}.zip" | Out-File -Encoding utf8 cmd-correct-${{ matrix.target }}.zip.sha256
+          (Get-FileHash fix-${{ matrix.target }}.zip -Algorithm SHA256).Hash.ToLower() + "  fix-${{ matrix.target }}.zip" | Out-File -Encoding utf8 fix-${{ matrix.target }}.zip.sha256
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: cmd-correct-${{ matrix.target }}
+          name: fix-${{ matrix.target }}
           path: |
-            cmd-correct-cli/cmd-correct-${{ matrix.target }}.*
+            fix-cli/fix-${{ matrix.target }}.*
 
   release:
     name: Create Release
@@ -190,7 +190,7 @@ jobs:
           echo "" >> notes.md
           echo "## Installation" >> notes.md
           echo '```bash' >> notes.md
-          echo 'curl -fsSL https://animeshkundu.github.io/oops-llm-cli/install.sh | sh' >> notes.md
+          echo 'curl -fsSL https://animeshkundu.github.io/fix/install.sh | sh' >> notes.md
           echo '```' >> notes.md
 
       - name: Create release
