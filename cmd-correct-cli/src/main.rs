@@ -104,7 +104,8 @@ fn load_config() -> Config {
 
 fn save_config(config: &Config) -> Result<(), String> {
     let dir = config_dir();
-    std::fs::create_dir_all(&dir).map_err(|e| format!("Failed to create config directory: {}", e))?;
+    std::fs::create_dir_all(&dir)
+        .map_err(|e| format!("Failed to create config directory: {}", e))?;
     let content = serde_json::to_string_pretty(config).map_err(|e| e.to_string())?;
     std::fs::write(config_path(), content).map_err(|e| format!("Failed to save config: {}", e))
 }
@@ -226,8 +227,7 @@ fn download_model(model_name: &str) -> Result<PathBuf, String> {
 
     // Write to a temp file first, then rename (atomic operation)
     let temp_dest = dest.with_extension("gguf.tmp");
-    let mut file =
-        File::create(&temp_dest).map_err(|e| format!("Failed to create file: {}", e))?;
+    let mut file = File::create(&temp_dest).map_err(|e| format!("Failed to create file: {}", e))?;
 
     let mut downloaded = 0u64;
     let mut reader = response;
@@ -249,7 +249,8 @@ fn download_model(model_name: &str) -> Result<PathBuf, String> {
     pb.finish_and_clear();
 
     // Rename temp file to final destination
-    std::fs::rename(&temp_dest, &dest).map_err(|e| format!("Failed to finalize download: {}", e))?;
+    std::fs::rename(&temp_dest, &dest)
+        .map_err(|e| format!("Failed to finalize download: {}", e))?;
 
     eprintln!("✓ Downloaded to {}", dest.display());
     Ok(dest)
@@ -491,9 +492,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         // Convert token to string
-        if let Ok(piece) =
-            model.token_to_str(new_token, llama_cpp_2::model::Special::Tokenize)
-        {
+        if let Ok(piece) = model.token_to_str(new_token, llama_cpp_2::model::Special::Tokenize) {
             // Stop at special tokens
             if piece.contains("<|im_end|>") || piece.contains("<|im_start|>") {
                 break;
