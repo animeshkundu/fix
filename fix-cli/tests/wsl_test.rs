@@ -161,10 +161,16 @@ fn test_wsl_path_conversion() {
     let path_str = wsl_path.to_string_lossy();
 
     // This is the WSL representation of C:\Users
-    assert!(path_str.contains("/mnt/c"), "Path should use WSL mount notation");
+    assert!(
+        path_str.contains("/mnt/c"),
+        "Path should use WSL mount notation"
+    );
 
     // The path should NOT contain Windows-style separators
-    assert!(!path_str.contains('\\'), "WSL path should use forward slashes");
+    assert!(
+        !path_str.contains('\\'),
+        "WSL path should use forward slashes"
+    );
 }
 
 /// Test that environment variables from Windows aren't polluting Linux environment

@@ -103,10 +103,7 @@ fn test_model_path_format() {
 
     // Model path should have .gguf extension
     assert!(
-        model_path
-            .extension()
-            .map(|e| e == "gguf")
-            .unwrap_or(false),
+        model_path.extension().map(|e| e == "gguf").unwrap_or(false),
         "Model path should have .gguf extension"
     );
 
@@ -130,7 +127,10 @@ fn test_can_create_config_directory() {
     fs::create_dir_all(&temp_dir).expect("Should be able to create config directory");
 
     // Verify it exists
-    assert!(temp_dir.exists(), "Config directory should exist after creation");
+    assert!(
+        temp_dir.exists(),
+        "Config directory should exist after creation"
+    );
     assert!(temp_dir.is_dir(), "Config directory should be a directory");
 
     // Clean up
@@ -185,10 +185,7 @@ fn test_windows_path_handling() {
 
     // Windows paths may contain backslashes or forward slashes
     // Just verify it's a valid-looking path
-    assert!(
-        path_str.len() > 3,
-        "Windows path should be reasonably long"
-    );
+    assert!(path_str.len() > 3, "Windows path should be reasonably long");
 
     // Should not start with forward slash (Unix-style)
     assert!(

@@ -49,7 +49,10 @@ fn test_e2e_typo_correction_git() {
     }
 
     if !model_exists() {
-        eprintln!("Model not found at {:?}, skipping E2E test", get_model_path());
+        eprintln!(
+            "Model not found at {:?}, skipping E2E test",
+            get_model_path()
+        );
         return;
     }
 
@@ -64,7 +67,10 @@ fn test_e2e_typo_correction_git() {
     eprintln!("stdout: {}", stdout);
     eprintln!("stderr: {}", stderr);
 
-    assert_eq!(stdout, "git status", "Should correct 'gti status' to 'git status'");
+    assert_eq!(
+        stdout, "git status",
+        "Should correct 'gti status' to 'git status'"
+    );
 }
 
 #[test]
@@ -82,7 +88,10 @@ fn test_e2e_typo_correction_docker() {
 
     let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
 
-    assert_eq!(stdout, "docker ps", "Should correct 'dcoker ps' to 'docker ps'");
+    assert_eq!(
+        stdout, "docker ps",
+        "Should correct 'dcoker ps' to 'docker ps'"
+    );
 }
 
 #[test]
@@ -100,7 +109,10 @@ fn test_e2e_typo_correction_npm() {
 
     let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
 
-    assert_eq!(stdout, "npm install", "Should correct 'nmp install' to 'npm install'");
+    assert_eq!(
+        stdout, "npm install",
+        "Should correct 'nmp install' to 'npm install'"
+    );
 }
 
 #[test]
