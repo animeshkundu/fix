@@ -30,6 +30,11 @@ jobs:
           additional-packages: |
             build-essential
             curl
+            cmake
+            git
+            libclang-dev
+            pkg-config
+            libssl-dev
 
       # Install Rust in WSL
       - name: Install Rust in WSL
@@ -123,6 +128,11 @@ jobs:
           additional-packages: |
             build-essential
             curl
+            cmake
+            git
+            libclang-dev
+            pkg-config
+            libssl-dev
 
       - name: Install Rust in WSL
         shell: wsl-bash {0}
