@@ -362,11 +362,32 @@ mod stderr_redirect {
 
 #[cfg(windows)]
 mod stderr_redirect {
-    pub fn redirect() -> Option<()> {
-        // On Windows, log callback suppression is sufficient
-        None
+    use std::ffi::CString;
+
+    pub struct SavedStderr;
+
+    pub fn redirect() -> Option<SavedStderr> {
+        unsafe {
+            let stderr_handle = libc_stdhandle::stderr();
+            let nul = CString::new("NUL").unwrap();
+            let mode = CString::new("w").unwrap();
+
+            let result = libc::freopen(nul.as_ptr(), mode.as_ptr(), stderr_handle);
+            if result.is_null() {
+                return None;
+            }
+            Some(SavedStderr)
+        }
     }
-    pub fn restore(_: ()) {}
+
+    pub fn restore(_saved: SavedStderr) {
+        unsafe {
+            let stderr_handle = libc_stdhandle::stderr();
+            let conout = CString::new("CONOUT$").unwrap();
+            let mode = CString::new("w").unwrap();
+            libc::freopen(conout.as_ptr(), mode.as_ptr(), stderr_handle);
+        }
+    }
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -431,6 +452,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     #[cfg(unix)]
+    let saved_stderr = if !args.verbose {
+        stderr_redirect::redirect()
+    } else {
+        None
+    };
+
+    #[cfg(windows)]
     let saved_stderr = if !args.verbose {
         stderr_redirect::redirect()
     } else {
@@ -554,11 +582,398 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         stderr_redirect::restore(saved);
     }
 
+    #[cfg(windows)]
+    if let Some(saved) = saved_stderr {
+        stderr_redirect::restore(saved);
+    }
+
     if !result.is_empty() {
         println!("{}", result);
         Ok(())
     } else {
         eprintln!("Could not correct command");
         std::process::exit(1);
+    }
+}
+
+// Linux dependency detection for users building from source with OpenMP
+#[cfg(target_os = "linux")]
+fn check_library_exists(lib_name: &str) -> bool {
+    use std::process::Command;
+
+    // Method 1: Try ldconfig
+    if let Ok(output) = Command::new("ldconfig").args(["-p"]).output() {
+        if output.status.success() {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            if stdout.contains(lib_name) {
+                return true;
+            }
+        }
+    }
+
+    // Method 2: Check common library paths
+    let lib_paths = [
+        "/lib/x86_64-linux-gnu",
+        "/usr/lib/x86_64-linux-gnu",
+        "/lib64",
+        "/usr/lib64",
+        "/lib",
+        "/usr/lib",
+    ];
+
+    for path in lib_paths {
+        let full_path = format!("{}/{}", path, lib_name);
+        if std::path::Path::new(&full_path).exists() {
+            return true;
+        }
+    }
+
+    false
+}
+
+#[cfg(target_os = "linux")]
+fn detect_package_manager_command() -> &'static str {
+    use std::path::Path;
+
+    // Check /etc/os-release for distro identification
+    if let Ok(content) = std::fs::read_to_string("/etc/os-release") {
+        let content_lower = content.to_lowercase();
+
+        // Debian/Ubuntu family
+        if content_lower.contains("ubuntu")
+            || content_lower.contains("debian")
+            || content_lower.contains("mint")
+            || content_lower.contains("pop")
+        {
+            return "sudo apt install libgomp1";
+        }
+
+        // RHEL family
+        if content_lower.contains("fedora")
+            || content_lower.contains("rhel")
+            || content_lower.contains("centos")
+            || content_lower.contains("rocky")
+            || content_lower.contains("alma")
+            || content_lower.contains("amazon")
+        {
+            return "sudo dnf install libgomp";
+        }
+
+        // Arch family
+        if content_lower.contains("arch")
+            || content_lower.contains("manjaro")
+            || content_lower.contains("endeavour")
+        {
+            return "sudo pacman -S gcc-libs";
+        }
+
+        // openSUSE
+        if content_lower.contains("suse") || content_lower.contains("opensuse") {
+            return "sudo zypper install libgomp1";
+        }
+
+        // Alpine
+        if content_lower.contains("alpine") {
+            return "sudo apk add libgomp";
+        }
+    }
+
+    // Fallback: detect by package manager binary
+    if Path::new("/usr/bin/apt").exists() || Path::new("/usr/bin/apt-get").exists() {
+        return "sudo apt install libgomp1";
+    }
+    if Path::new("/usr/bin/dnf").exists() {
+        return "sudo dnf install libgomp";
+    }
+    if Path::new("/usr/bin/yum").exists() {
+        return "sudo yum install libgomp";
+    }
+    if Path::new("/usr/bin/pacman").exists() {
+        return "sudo pacman -S gcc-libs";
+    }
+    if Path::new("/usr/bin/zypper").exists() {
+        return "sudo zypper install libgomp1";
+    }
+    if Path::new("/sbin/apk").exists() {
+        return "sudo apk add libgomp";
+    }
+
+    "Install libgomp using your package manager (e.g., apt install libgomp1)"
+}
+
+#[cfg(target_os = "linux")]
+#[allow(dead_code)]
+fn check_linux_dependencies() {
+    if !check_library_exists("libgomp.so.1") {
+        eprintln!("error: Missing required library: libgomp.so.1");
+        eprintln!();
+        let install_cmd = detect_package_manager_command();
+        eprintln!("Install it with:");
+        eprintln!("  {}", install_cmd);
+        eprintln!();
+        eprintln!("Or rebuild fix from source (OpenMP disabled by default).");
+        std::process::exit(1);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ===== Config Default Tests =====
+
+    #[test]
+    fn test_config_default_model() {
+        let config = Config::default();
+        assert_eq!(config.default_model, "qwen3-correct-0.6B");
+    }
+
+    #[test]
+    fn test_default_model_constant() {
+        assert_eq!(DEFAULT_MODEL, "qwen3-correct-0.6B");
+    }
+
+    #[test]
+    fn test_hf_repo_constant() {
+        assert_eq!(HF_REPO, "animeshkundu/cmd-correct");
+    }
+
+    // ===== Shell Detection Tests =====
+
+    #[test]
+    fn test_detect_shell_from_shell_env_bash() {
+        let original = env::var("SHELL").ok();
+        let original_ps = env::var("PSModulePath").ok();
+
+        env::set_var("SHELL", "/bin/bash");
+        env::remove_var("PSModulePath");
+
+        let result = detect_shell();
+        assert_eq!(result, "bash");
+
+        // Restore
+        match original {
+            Some(val) => env::set_var("SHELL", val),
+            None => env::remove_var("SHELL"),
+        }
+        match original_ps {
+            Some(val) => env::set_var("PSModulePath", val),
+            None => env::remove_var("PSModulePath"),
+        }
+    }
+
+    #[test]
+    fn test_detect_shell_from_shell_env_zsh() {
+        let original = env::var("SHELL").ok();
+        let original_ps = env::var("PSModulePath").ok();
+
+        env::set_var("SHELL", "/usr/bin/zsh");
+        env::remove_var("PSModulePath");
+
+        let result = detect_shell();
+        assert_eq!(result, "zsh");
+
+        match original {
+            Some(val) => env::set_var("SHELL", val),
+            None => env::remove_var("SHELL"),
+        }
+        match original_ps {
+            Some(val) => env::set_var("PSModulePath", val),
+            None => env::remove_var("PSModulePath"),
+        }
+    }
+
+    #[test]
+    fn test_detect_shell_from_shell_env_fish() {
+        let original = env::var("SHELL").ok();
+        let original_ps = env::var("PSModulePath").ok();
+
+        env::set_var("SHELL", "/usr/local/bin/fish");
+        env::remove_var("PSModulePath");
+
+        let result = detect_shell();
+        assert_eq!(result, "fish");
+
+        match original {
+            Some(val) => env::set_var("SHELL", val),
+            None => env::remove_var("SHELL"),
+        }
+        match original_ps {
+            Some(val) => env::set_var("PSModulePath", val),
+            None => env::remove_var("PSModulePath"),
+        }
+    }
+
+    #[test]
+    fn test_detect_shell_powershell_via_psmodulepath() {
+        let original_shell = env::var("SHELL").ok();
+        let original_ps = env::var("PSModulePath").ok();
+
+        env::remove_var("SHELL");
+        env::set_var("PSModulePath", "/some/module/path");
+
+        let result = detect_shell();
+        assert_eq!(result, "powershell");
+
+        // Restore
+        match original_shell {
+            Some(val) => env::set_var("SHELL", val),
+            None => env::remove_var("SHELL"),
+        }
+        match original_ps {
+            Some(val) => env::set_var("PSModulePath", val),
+            None => env::remove_var("PSModulePath"),
+        }
+    }
+
+    #[test]
+    fn test_detect_shell_fallback() {
+        let original_shell = env::var("SHELL").ok();
+        let original_ps = env::var("PSModulePath").ok();
+
+        env::remove_var("SHELL");
+        env::remove_var("PSModulePath");
+
+        let result = detect_shell();
+
+        // On Unix, should fall back to "bash"; on Windows, "cmd"
+        #[cfg(unix)]
+        assert_eq!(result, "bash");
+
+        #[cfg(windows)]
+        assert_eq!(result, "cmd");
+
+        // Restore
+        match original_shell {
+            Some(val) => env::set_var("SHELL", val),
+            None => env::remove_var("SHELL"),
+        }
+        match original_ps {
+            Some(val) => env::set_var("PSModulePath", val),
+            None => env::remove_var("PSModulePath"),
+        }
+    }
+
+    // ===== Build Prompt Tests =====
+
+    #[test]
+    fn test_build_prompt_basic() {
+        let prompt = build_prompt("bash", "gti status", None);
+
+        assert!(prompt.contains("<|im_start|>system"));
+        assert!(prompt.contains("shell command corrector for bash"));
+        assert!(prompt.contains("<|im_start|>user"));
+        assert!(prompt.contains("gti status"));
+        assert!(prompt.contains("<|im_end|>"));
+        assert!(prompt.contains("<|im_start|>assistant"));
+    }
+
+    #[test]
+    fn test_build_prompt_different_shells() {
+        let shells = vec!["bash", "zsh", "fish", "powershell", "cmd", "tcsh"];
+
+        for shell in shells {
+            let prompt = build_prompt(shell, "test command", None);
+            assert!(
+                prompt.contains(&format!("corrector for {}", shell)),
+                "Prompt should contain shell name: {}",
+                shell
+            );
+        }
+    }
+
+    #[test]
+    fn test_build_prompt_special_characters() {
+        let prompt = build_prompt("bash", "echo \"hello world\" | grep 'test'", None);
+
+        assert!(prompt.contains("echo \"hello world\" | grep 'test'"));
+    }
+
+    #[test]
+    fn test_build_prompt_empty_command() {
+        let prompt = build_prompt("bash", "", None);
+
+        // Should still produce valid ChatML structure
+        assert!(prompt.contains("<|im_start|>system"));
+        assert!(prompt.contains("<|im_start|>user"));
+        assert!(prompt.contains("<|im_start|>assistant"));
+    }
+
+    #[test]
+    fn test_build_prompt_multiline_command() {
+        let cmd = "echo hello && \\\necho world";
+        let prompt = build_prompt("bash", cmd, None);
+
+        assert!(prompt.contains(cmd));
+    }
+
+    // ===== Path Function Tests =====
+
+    #[test]
+    fn test_config_dir_returns_path() {
+        let dir = config_dir();
+
+        // Should end with "fix"
+        assert!(dir.ends_with("fix"));
+
+        // Should not be empty
+        assert!(!dir.as_os_str().is_empty());
+    }
+
+    #[test]
+    fn test_config_path_returns_json_file() {
+        let path = config_path();
+
+        // Should end with "config.json"
+        assert!(path.ends_with("config.json"));
+
+        // Parent should be config_dir()
+        assert_eq!(path.parent().unwrap(), config_dir());
+    }
+
+    #[test]
+    fn test_get_model_path_appends_gguf() {
+        let path = get_model_path("test-model");
+
+        assert!(path.ends_with("test-model.gguf"));
+        assert_eq!(path.parent().unwrap(), config_dir());
+    }
+
+    #[test]
+    fn test_get_model_path_preserves_name() {
+        let model_names = vec![
+            "qwen3-correct-0.6B",
+            "llama-7b-q4",
+            "model_with_underscore",
+            "model-with-dash",
+        ];
+
+        for name in model_names {
+            let path = get_model_path(name);
+            let filename = path.file_name().unwrap().to_str().unwrap();
+            assert_eq!(filename, format!("{}.gguf", name));
+        }
+    }
+
+    // ===== Config Serialization Tests =====
+
+    #[test]
+    fn test_config_serialization_roundtrip() {
+        let config = Config {
+            default_model: "test-model".to_string(),
+        };
+
+        let json = serde_json::to_string(&config).unwrap();
+        let deserialized: Config = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(config.default_model, deserialized.default_model);
+    }
+
+    #[test]
+    fn test_config_deserialize_from_json() {
+        let json = r#"{"default_model": "custom-model"}"#;
+        let config: Config = serde_json::from_str(json).unwrap();
+
+        assert_eq!(config.default_model, "custom-model");
     }
 }
