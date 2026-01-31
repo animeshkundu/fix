@@ -79,6 +79,44 @@ if ($userPath -notlike "*$installDir*") {
     Write-Info "$installDir is already in PATH"
 }
 
+# Download default model
+$modelUrl = "https://huggingface.co/animeshkundu/cmd-correct/resolve/main/qwen3-correct-0.6B.gguf"
+$modelPath = "$installDir\qwen3-correct-0.6B.gguf"
+
+if (Test-Path $modelPath) {
+    Write-Info "Model already exists at $modelPath"
+} else {
+    Write-Info "Downloading default model (~378MB)..."
+    try {
+        Invoke-WebRequest -Uri $modelUrl -OutFile $modelPath -UseBasicParsing
+        Write-Success "Model downloaded to $modelPath"
+    } catch {
+        Write-Host "warning: " -ForegroundColor Yellow -NoNewline
+        Write-Host "Model download failed: $_"
+        Write-Host "You can retry with: $binary --update"
+    }
+}
+
+# Verify installation with test command
+Write-Info "Testing installation..."
+try {
+    $testOutput = & $exePath "gti status" 2>&1 | Out-String
+    $testOutput = $testOutput.Trim()
+    if ($testOutput -eq "git status") {
+        Write-Success "Test passed! 'gti status' -> 'git status'"
+    } else {
+        Write-Host "warning: " -ForegroundColor Yellow -NoNewline
+        Write-Host "Test produced: $testOutput"
+        Write-Host ""
+        Write-Host "If this doesn't look right, try:"
+        Write-Host "  - Ensure GPU drivers are up to date"
+        Write-Host "  - Run '$binary --verbose gti status' for debug output"
+    }
+} catch {
+    Write-Host "warning: " -ForegroundColor Yellow -NoNewline
+    Write-Host "Test failed: $_"
+}
+
 Write-Host ""
 Write-Success "Installation complete!"
 Write-Host ""

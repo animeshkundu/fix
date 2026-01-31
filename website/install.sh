@@ -132,6 +132,40 @@ main() {
       ;;
   esac
 
+  # Download default model
+  local model_url="https://huggingface.co/animeshkundu/cmd-correct/resolve/main/qwen3-correct-0.6B.gguf"
+  local model_dir="${HOME}/.config/fix"
+  local model_path="${model_dir}/qwen3-correct-0.6B.gguf"
+
+  if [ -f "$model_path" ]; then
+    info "Model already exists at ${model_path}"
+  else
+    info "Downloading default model (~378MB)..."
+    mkdir -p "$model_dir"
+    if curl -fSL --progress-bar "$model_url" -o "$model_path"; then
+      success "Model downloaded to ${model_path}"
+    else
+      warn "Model download failed. You can retry with: ${BINARY} --update"
+    fi
+  fi
+
+  # Verify installation with test command
+  info "Testing installation..."
+  local test_output
+  test_output=$("${INSTALL_DIR}/${BINARY}" "gti status" 2>&1) || true
+
+  if [ "$test_output" = "git status" ]; then
+    success "Test passed! 'gti status' → 'git status'"
+  else
+    warn "Test produced unexpected output: ${test_output}"
+    warn "The CLI may need GPU drivers or a different build."
+    echo ""
+    echo "Troubleshooting:"
+    echo "  - On WSL: Try the native Windows build instead"
+    echo "  - On Linux: Ensure GPU drivers are installed"
+    echo "  - Run '${BINARY} --verbose gti status' for debug output"
+  fi
+
   success "Installation complete!"
   echo ""
   echo "Run '${BINARY} --help' to get started."
