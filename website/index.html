@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>fix - Shell command typo corrector</title>
+  <meta name="description" content="Fix shell command typos instantly with a local LLM. No API keys, no internet required. Works offline.">
+  <meta name="keywords" content="shell, command line, typo, fix, correction, CLI, terminal, bash, zsh">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔧</text></svg>">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="/" class="logo">fix</a>
+      <nav>
+        <a href="#install">Install</a>
+        <a href="#features">Features</a>
+        <a href="#examples">Examples</a>
+        <a href="https://github.com/animeshkundu/fix" class="github-link" aria-label="GitHub">
+          <svg height="20" viewBox="0 0 16 16" width="20" fill="currentColor">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+          </svg>
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container">
+        <h1>Fix shell typos instantly.</h1>
+        <p class="subtitle">A local LLM that corrects your command line mistakes. No API keys, no cloud, no internet required after setup.</p>
+
+        <div class="terminal-demo">
+          <div class="terminal-header">
+            <span class="terminal-dot red"></span>
+            <span class="terminal-dot yellow"></span>
+            <span class="terminal-dot green"></span>
+          </div>
+          <div class="terminal-body">
+            <div class="terminal-line">
+              <span class="prompt">$</span>
+              <span class="command typing">fix "gti status"</span>
+            </div>
+            <div class="terminal-line output">
+              <span class="result">git status</span>
+            </div>
+            <div class="terminal-line">
+              <span class="prompt">$</span>
+              <span class="command">fix "dcoker ps -a"</span>
+            </div>
+            <div class="terminal-line output">
+              <span class="result">docker ps -a</span>
+            </div>
+          </div>
+        </div>
+
+        <a href="#install" class="cta-button">Install Now</a>
+      </div>
+    </section>
+
+    <section id="features" class="features">
+      <div class="container">
+        <h2>Why fix?</h2>
+        <div class="feature-grid">
+          <div class="feature-card">
+            <div class="feature-icon">⚡</div>
+            <h3>Fast</h3>
+            <p>Sub-100ms inference on Apple Silicon. Near-instant corrections.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🔒</div>
+            <h3>Private</h3>
+            <p>Everything runs locally. Your commands never leave your machine.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">📡</div>
+            <h3>Offline</h3>
+            <p>Works without internet after initial model download (~400MB).</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">💻</div>
+            <h3>Cross-platform</h3>
+            <p>Native binaries for macOS, Linux, and Windows.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="install" class="install">
+      <div class="container">
+        <h2>Install</h2>
+        <div class="install-tabs" role="tablist">
+          <button class="tab active" data-tab="unix" role="tab" aria-selected="true">macOS / Linux</button>
+          <button class="tab" data-tab="windows" role="tab" aria-selected="false">Windows</button>
+          <button class="tab" data-tab="cargo" role="tab" aria-selected="false">Cargo</button>
+          <button class="tab" data-tab="manual" role="tab" aria-selected="false">Manual</button>
+        </div>
+
+        <div class="install-content">
+          <div class="tab-content active" id="unix" role="tabpanel">
+            <div class="code-block">
+              <code>curl -fsSL https://animeshkundu.github.io/fix/install.sh | sh</code>
+              <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy to clipboard">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <span class="copied-text">Copied!</span>
+              </button>
+            </div>
+            <p class="note">Downloads the latest release and installs to <code>~/.local/bin</code></p>
+          </div>
+
+          <div class="tab-content" id="windows" role="tabpanel">
+            <div class="code-block">
+              <code>iwr -useb https://animeshkundu.github.io/fix/install.ps1 | iex</code>
+              <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy to clipboard">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <span class="copied-text">Copied!</span>
+              </button>
+            </div>
+            <p class="note">Run in PowerShell. Installs to <code>%LOCALAPPDATA%\fix</code> and adds to PATH.</p>
+          </div>
+
+          <div class="tab-content" id="cargo" role="tabpanel">
+            <div class="code-block">
+              <code>cargo install --git https://github.com/animeshkundu/fix fix-cli</code>
+              <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy to clipboard">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <span class="copied-text">Copied!</span>
+              </button>
+            </div>
+            <p class="note">Requires Rust toolchain. Add <code>--features metal</code> on macOS for GPU acceleration.</p>
+          </div>
+
+          <div class="tab-content" id="manual" role="tabpanel">
+            <p>Download the binary for your platform from <a href="https://github.com/animeshkundu/fix/releases">GitHub Releases</a>:</p>
+            <ul class="binary-list">
+              <li><code>fix-aarch64-apple-darwin.tar.gz</code> <span>macOS Apple Silicon</span></li>
+              <li><code>fix-x86_64-apple-darwin.tar.gz</code> <span>macOS Intel</span></li>
+              <li><code>fix-x86_64-unknown-linux-gnu.tar.gz</code> <span>Linux x64</span></li>
+              <li><code>fix-x86_64-pc-windows-msvc.zip</code> <span>Windows x64</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="examples" class="examples">
+      <div class="container">
+        <h2>Examples</h2>
+        <div class="examples-table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>You typed</th>
+                <th>fix outputs</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><code>gti status</code></td><td><code>git status</code></td></tr>
+              <tr><td><code>dcoker ps -a</code></td><td><code>docker ps -a</code></td></tr>
+              <tr><td><code>pytohn script.py</code></td><td><code>python script.py</code></td></tr>
+              <tr><td><code>npm isntall</code></td><td><code>npm install</code></td></tr>
+              <tr><td><code>kubeclt get pods</code></td><td><code>kubectl get pods</code></td></tr>
+              <tr><td><code>cagro build --release</code></td><td><code>cargo build --release</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="how-it-works">
+      <div class="container">
+        <h2>How it works</h2>
+        <div class="steps">
+          <div class="step">
+            <div class="step-number">1</div>
+            <div class="step-content">
+              <h3>Download</h3>
+              <p>On first run, fix downloads a small language model (~400MB) fine-tuned for shell command correction.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-number">2</div>
+            <div class="step-content">
+              <h3>Run locally</h3>
+              <p>The model runs entirely on your machine using Metal (macOS) or CUDA (Linux/Windows) for fast inference.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-number">3</div>
+            <div class="step-content">
+              <h3>Stay private</h3>
+              <p>Your commands never leave your computer. No telemetry, no API calls, no data collection.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="usage">
+      <div class="container">
+        <h2>Usage</h2>
+        <div class="terminal-demo static">
+          <div class="terminal-header">
+            <span class="terminal-dot red"></span>
+            <span class="terminal-dot yellow"></span>
+            <span class="terminal-dot green"></span>
+          </div>
+          <div class="terminal-body">
+<pre><span class="prompt">$</span> fix --help
+Fix shell command typos using a local LLM
+
+<span class="dim">Usage:</span> fix [OPTIONS] [COMMAND]...
+
+<span class="dim">Arguments:</span>
+  [COMMAND]...  The command to correct
+
+<span class="dim">Options:</span>
+  -e, --error &lt;ERROR&gt;      Error message from failed command
+  -s, --shell &lt;SHELL&gt;      Override detected shell
+      --list-models        List available models
+      --use-model &lt;NAME&gt;   Download and set default model
+      --show-config        Show current configuration
+  -v, --verbose            Show model loading logs
+  -h, --help               Print help
+  -V, --version            Print version</pre>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <div class="footer-content">
+        <p>MIT License</p>
+        <div class="footer-links">
+          <a href="https://github.com/animeshkundu/fix">GitHub</a>
+          <a href="https://github.com/animeshkundu/fix/releases">Releases</a>
+          <a href="https://huggingface.co/animeshkundu/cmd-correct">Model</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Tab switching
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => {
+          t.classList.remove('active');
+          t.setAttribute('aria-selected', 'false');
+        });
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        tab.setAttribute('aria-selected', 'true');
+        document.getElementById(tab.dataset.tab).classList.add('active');
+      });
+    });
+
+    // Copy to clipboard
+    function copyCode(btn) {
+      const code = btn.parentElement.querySelector('code').textContent;
+      navigator.clipboard.writeText(code).then(() => {
+        btn.classList.add('copied');
+        setTimeout(() => btn.classList.remove('copied'), 2000);
+      });
+    }
+
+    // OS detection - auto-select install tab
+    function detectOS() {
+      const ua = navigator.userAgent.toLowerCase();
+      if (ua.includes('win')) return 'windows';
+      if (ua.includes('mac')) return 'unix';
+      if (ua.includes('linux')) return 'unix';
+      return 'unix';
+    }
+
+    // Set initial tab based on OS
+    document.addEventListener('DOMContentLoaded', () => {
+      const os = detectOS();
+      const tab = document.querySelector(`[data-tab="${os}"]`);
+      if (tab && !tab.classList.contains('active')) {
+        tab.click();
+      }
+    });
+
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function(e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+  </script>
+</body>
+</html>
