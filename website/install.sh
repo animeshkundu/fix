@@ -58,7 +58,21 @@ download_windows_binary() {
 
   info "Downloading Windows binary for WSL..."
   local tmpdir=$(mktemp -d)
-  if curl -fsSL "$win_url" -o "${tmpdir}/fix.zip" && unzip -q "${tmpdir}/fix.zip" -d "${tmpdir}"; then
+
+  if curl -fsSL "$win_url" -o "${tmpdir}/fix.zip"; then
+    # Try multiple extraction methods
+    if command -v unzip >/dev/null 2>&1; then
+      unzip -q "${tmpdir}/fix.zip" -d "${tmpdir}"
+    elif command -v 7z >/dev/null 2>&1; then
+      7z x -o"${tmpdir}" "${tmpdir}/fix.zip" >/dev/null
+    elif command -v powershell.exe >/dev/null 2>&1; then
+      powershell.exe -Command "Expand-Archive -Path '${tmpdir}/fix.zip' -DestinationPath '${tmpdir}'" 2>/dev/null
+    else
+      warn "No zip extraction tool found. Install unzip: sudo apt install unzip"
+      rm -rf "${tmpdir}"
+      return 1
+    fi
+
     mv "${tmpdir}/${BINARY}.exe" "${INSTALL_DIR}/${BINARY}.exe"
     chmod +x "${INSTALL_DIR}/${BINARY}.exe"
     rm -rf "${tmpdir}"
@@ -202,10 +216,18 @@ main() {
           echo "Debug with: ${BINARY}.exe --verbose gti status"
         fi
       else
-        warn "Failed to download Windows binary."
+        warn "Linux binary failed (likely GLIBC version) and Windows fallback unavailable."
         echo ""
-        echo "You can manually download from:"
-        echo "  https://github.com/${REPO}/releases/latest"
+        echo "Options:"
+        echo "  1. Install unzip and retry:"
+        echo "     sudo apt install unzip && curl -fsSL https://animeshkundu.github.io/fix/install.sh | bash"
+        echo ""
+        echo "  2. Download Windows binary manually:"
+        echo "     https://github.com/${REPO}/releases/latest"
+        echo "     Extract fix.exe to ${INSTALL_DIR}/"
+        echo ""
+        echo "  3. Build from source:"
+        echo "     cargo install --git https://github.com/${REPO} fix"
       fi
     else
       # Native Linux
