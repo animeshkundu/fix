@@ -247,6 +247,11 @@ jobs:
     name: Test install.sh (WSL)
     runs-on: windows-latest
     steps:
+      - name: Configure git for LF line endings
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.eol lf
+
       - uses: actions/checkout@v4
 
       - name: Setup WSL
