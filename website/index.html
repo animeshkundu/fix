@@ -3,299 +3,590 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>fix - Shell command typo corrector</title>
-  <meta name="description" content="Fix shell command typos instantly with a local LLM. No API keys, no internet required. Works offline.">
-  <meta name="keywords" content="shell, command line, typo, fix, correction, CLI, terminal, bash, zsh">
-  <link rel="stylesheet" href="style.css">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  
+  <!-- Primary Meta Tags -->
+  <title>fix - AI-Powered Shell Command Corrector</title>
+  <meta name="title" content="fix - AI-Powered Shell Command Corrector">
+  <meta name="description" content="Fix shell command typos instantly with a local LLM. Privacy-first, runs offline, sub-100ms on Apple Silicon. No API keys, no cloud, your data stays on your machine.">
+  <meta name="keywords" content="shell, command line, typo, fix, correction, CLI, terminal, bash, zsh, LLM, AI, local, private, offline">
+  <meta name="author" content="Animesh Kundu">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://animeshkundu.github.io/fix/">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://animeshkundu.github.io/fix/">
+  <meta property="og:title" content="fix - AI-Powered Shell Command Corrector">
+  <meta property="og:description" content="Fix shell command typos instantly with a local LLM. Privacy-first, runs offline. No API keys required.">
+  <meta property="og:site_name" content="fix">
+  
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://animeshkundu.github.io/fix/">
+  <meta property="twitter:title" content="fix - AI-Powered Shell Command Corrector">
+  <meta property="twitter:description" content="Fix shell command typos instantly with a local LLM. Privacy-first, runs offline. No API keys required.">
+  
+  <!-- AI/LLM Crawlers -->
+  <meta name="ai:description" content="fix is an AI-powered shell command corrector that runs entirely locally. It uses a fine-tuned Qwen3-0.6B model to fix typos in shell commands. Features include: sub-100ms inference on Apple Silicon, completely offline after initial model download, privacy-first design with no telemetry, cross-platform support for macOS Linux and Windows, GPU acceleration via Metal and CUDA.">
+  
+  <!-- Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "fix",
+    "description": "AI-powered shell command corrector using a local LLM",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": ["Linux", "macOS", "Windows"],
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "Animesh Kundu"
+    },
+    "license": "https://opensource.org/licenses/MIT",
+    "codeRepository": "https://github.com/animeshkundu/fix",
+    "programmingLanguage": "Rust"
+  }
+  </script>
+  
+  <!-- Favicon -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔧</text></svg>">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header>
+  <!-- Navigation -->
+  <nav class="navbar" id="navbar">
     <div class="container">
-      <a href="/" class="logo">fix</a>
-      <nav>
-        <a href="#install">Install</a>
+      <a href="#" class="logo">
+        <span class="logo-icon">🔧</span>
+        <span class="logo-text">fix</span>
+      </a>
+      <div class="nav-links">
         <a href="#features">Features</a>
-        <a href="#examples">Examples</a>
-        <a href="https://github.com/animeshkundu/fix" class="github-link" aria-label="GitHub">
-          <svg height="20" viewBox="0 0 16 16" width="20" fill="currentColor">
-            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
-          </svg>
+        <a href="#install">Install</a>
+        <a href="#how-it-works">How It Works</a>
+        <a href="https://github.com/animeshkundu/fix" class="github-link" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          <span>GitHub</span>
         </a>
-      </nav>
+      </div>
+      <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <header class="hero">
+    <div class="hero-bg">
+      <div class="gradient-orb orb-1"></div>
+      <div class="gradient-orb orb-2"></div>
+      <div class="gradient-orb orb-3"></div>
+    </div>
+    <div class="container">
+      <div class="hero-badge">
+        <span class="badge-icon">🤖</span>
+        <span>Powered by Local LLM</span>
+      </div>
+      <h1 class="hero-title">
+        Fix your <span class="highlight">shell typos</span> with AI
+      </h1>
+      <p class="hero-subtitle">
+        An AI-powered command corrector that runs entirely on your machine. No API keys, no cloud, no internet required after setup.
+      </p>
+      
+      <!-- Terminal Demo -->
+      <div class="terminal-demo">
+        <div class="terminal-header">
+          <div class="terminal-buttons">
+            <span class="btn-close"></span>
+            <span class="btn-minimize"></span>
+            <span class="btn-maximize"></span>
+          </div>
+          <span class="terminal-title">Terminal</span>
+        </div>
+        <div class="terminal-body">
+          <div class="terminal-line">
+            <span class="prompt">$</span>
+            <span class="command">gti status</span>
+          </div>
+          <div class="terminal-line error">
+            <span>zsh: command not found: gti</span>
+          </div>
+          <div class="terminal-line">
+            <span class="prompt">$</span>
+            <span class="command fix-cmd">fix "gti status"</span>
+          </div>
+          <div class="terminal-line suggestion">
+            <span class="suggestion-cmd">git status</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Quick Install -->
+      <div class="quick-install">
+        <h3>Quick Install</h3>
+        <div class="install-tabs">
+          <button class="tab-btn active" data-tab="linux">macOS / Linux</button>
+          <button class="tab-btn" data-tab="windows">Windows</button>
+          <button class="tab-btn" data-tab="cargo">Cargo</button>
+        </div>
+        <div class="install-content">
+          <div class="tab-panel active" id="linux">
+            <div class="code-block">
+              <code>curl -fsSL https://animeshkundu.github.io/fix/install.sh | sh</code>
+              <button class="copy-btn" data-copy="curl -fsSL https://animeshkundu.github.io/fix/install.sh | sh" aria-label="Copy to clipboard">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="tab-panel" id="windows">
+            <div class="code-block">
+              <code>irm https://animeshkundu.github.io/fix/install.ps1 | iex</code>
+              <button class="copy-btn" data-copy="irm https://animeshkundu.github.io/fix/install.ps1 | iex" aria-label="Copy to clipboard">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="tab-panel" id="cargo">
+            <div class="code-block">
+              <code>cargo install --git https://github.com/animeshkundu/fix fix-cli</code>
+              <button class="copy-btn" data-copy="cargo install --git https://github.com/animeshkundu/fix fix-cli" aria-label="Copy to clipboard">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        <p class="install-note">Model downloads automatically on first run (~400MB)</p>
+      </div>
     </div>
   </header>
 
-  <main>
-    <section class="hero">
-      <div class="container">
-        <h1>Fix shell typos instantly.</h1>
-        <p class="subtitle">A local LLM that corrects your command line mistakes. No API keys, no cloud, no internet required after setup.</p>
-
-        <div class="terminal-demo">
-          <div class="terminal-header">
-            <span class="terminal-dot red"></span>
-            <span class="terminal-dot yellow"></span>
-            <span class="terminal-dot green"></span>
-          </div>
-          <div class="terminal-body">
-            <div class="terminal-line">
-              <span class="prompt">$</span>
-              <span class="command typing">fix "gti status"</span>
-            </div>
-            <div class="terminal-line output">
-              <span class="result">git status</span>
-            </div>
-            <div class="terminal-line">
-              <span class="prompt">$</span>
-              <span class="command">fix "dcoker ps -a"</span>
-            </div>
-            <div class="terminal-line output">
-              <span class="result">docker ps -a</span>
-            </div>
-          </div>
-        </div>
-
-        <a href="#install" class="cta-button">Install Now</a>
+  <!-- Features Section -->
+  <section class="features" id="features">
+    <div class="container">
+      <div class="section-header">
+        <h2>Why developers choose <span class="highlight">fix</span></h2>
+        <p>AI-powered corrections without compromising your privacy</p>
       </div>
-    </section>
-
-    <section id="features" class="features">
-      <div class="container">
-        <h2>Why fix?</h2>
-        <div class="feature-grid">
-          <div class="feature-card">
-            <div class="feature-icon">⚡</div>
-            <h3>Fast</h3>
-            <p>Sub-100ms inference on Apple Silicon. Near-instant corrections.</p>
-          </div>
-          <div class="feature-card">
-            <div class="feature-icon">🔒</div>
-            <h3>Private</h3>
-            <p>Everything runs locally. Your commands never leave your machine.</p>
-          </div>
-          <div class="feature-card">
-            <div class="feature-icon">📡</div>
-            <h3>Offline</h3>
-            <p>Works without internet after initial model download (~400MB).</p>
-          </div>
-          <div class="feature-card">
-            <div class="feature-icon">💻</div>
-            <h3>Cross-platform</h3>
-            <p>Native binaries for macOS, Linux, and Windows.</p>
-          </div>
+      
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">🔒</div>
+          <h3>Privacy First</h3>
+          <p>Your commands never leave your machine. No telemetry, no API calls, no data collection. What happens in your terminal stays in your terminal.</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">⚡</div>
+          <h3>Lightning Fast</h3>
+          <p>Sub-100ms inference on Apple Silicon with Metal GPU. Near-instant corrections that keep up with your typing speed.</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">📡</div>
+          <h3>Works Offline</h3>
+          <p>After the initial one-time model download, everything runs locally. Perfect for air-gapped environments or unreliable connections.</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">🤖</div>
+          <h3>AI Powered</h3>
+          <p>Uses a fine-tuned Qwen3-0.6B model that understands shell command patterns. Handles novel typos that rule-based systems would miss.</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">🖥️</div>
+          <h3>Cross Platform</h3>
+          <p>Native binaries for macOS (Intel and Apple Silicon), Linux (x64, ARM64), and Windows. GPU acceleration where available.</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">📦</div>
+          <h3>Single Binary</h3>
+          <p>No Python, no Node.js, no runtime dependencies. Just one executable that downloads its model on first run.</p>
         </div>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <section id="install" class="install">
-      <div class="container">
-        <h2>Install</h2>
-        <div class="install-tabs" role="tablist">
-          <button class="tab active" data-tab="unix" role="tab" aria-selected="true">macOS / Linux</button>
-          <button class="tab" data-tab="windows" role="tab" aria-selected="false">Windows</button>
-          <button class="tab" data-tab="cargo" role="tab" aria-selected="false">Cargo</button>
-          <button class="tab" data-tab="manual" role="tab" aria-selected="false">Manual</button>
+  <!-- Comparison Section -->
+  <section class="comparison" id="comparison">
+    <div class="container">
+      <div class="section-header">
+        <h2>Local AI vs <span class="highlight">Cloud APIs</span></h2>
+        <p>Your commands are private. Keep them that way.</p>
+      </div>
+      
+      <div class="comparison-grid">
+        <div class="comparison-card fix-card">
+          <div class="comparison-label">fix <span class="badge">Local LLM</span></div>
+          <ul class="comparison-list">
+            <li class="pro"><span class="icon">✓</span> Runs entirely on your machine</li>
+            <li class="pro"><span class="icon">✓</span> No API keys or subscriptions</li>
+            <li class="pro"><span class="icon">✓</span> Works offline forever</li>
+            <li class="pro"><span class="icon">✓</span> Zero data leaves your computer</li>
+            <li class="pro"><span class="icon">✓</span> One-time 400MB download</li>
+            <li class="pro"><span class="icon">✓</span> Sub-100ms response time</li>
+          </ul>
         </div>
+        
+        <div class="vs-divider">vs</div>
+        
+        <div class="comparison-card cloud-card">
+          <div class="comparison-label">Cloud APIs <span class="badge cloud">Requires Internet</span></div>
+          <ul class="comparison-list">
+            <li class="con"><span class="icon">✗</span> Sends commands to remote servers</li>
+            <li class="con"><span class="icon">✗</span> Requires API keys and billing</li>
+            <li class="con"><span class="icon">✗</span> Fails without internet</li>
+            <li class="con"><span class="icon">✗</span> Commands stored in logs</li>
+            <li class="con"><span class="icon">✗</span> Ongoing costs per request</li>
+            <li class="con"><span class="icon">✗</span> Network latency (200-500ms)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
 
-        <div class="install-content">
-          <div class="tab-content active" id="unix" role="tabpanel">
+  <!-- Examples Section -->
+  <section class="examples" id="examples">
+    <div class="container">
+      <div class="section-header">
+        <h2>See it in <span class="highlight">action</span></h2>
+        <p>Common typos fixed instantly</p>
+      </div>
+      
+      <div class="examples-grid">
+        <div class="example-card">
+          <div class="example-category">Git</div>
+          <div class="example-pair">
+            <code class="typo">gti status</code>
+            <span class="arrow">→</span>
+            <code class="fixed">git status</code>
+          </div>
+          <div class="example-pair">
+            <code class="typo">git pul origin main</code>
+            <span class="arrow">→</span>
+            <code class="fixed">git pull origin main</code>
+          </div>
+        </div>
+        
+        <div class="example-card">
+          <div class="example-category">Docker</div>
+          <div class="example-pair">
+            <code class="typo">dcoker ps -a</code>
+            <span class="arrow">→</span>
+            <code class="fixed">docker ps -a</code>
+          </div>
+          <div class="example-pair">
+            <code class="typo">docker biuld -t myapp .</code>
+            <span class="arrow">→</span>
+            <code class="fixed">docker build -t myapp .</code>
+          </div>
+        </div>
+        
+        <div class="example-card">
+          <div class="example-category">Package Managers</div>
+          <div class="example-pair">
+            <code class="typo">npm isntall</code>
+            <span class="arrow">→</span>
+            <code class="fixed">npm install</code>
+          </div>
+          <div class="example-pair">
+            <code class="typo">pip instal requests</code>
+            <span class="arrow">→</span>
+            <code class="fixed">pip install requests</code>
+          </div>
+        </div>
+        
+        <div class="example-card">
+          <div class="example-category">Kubernetes</div>
+          <div class="example-pair">
+            <code class="typo">kubeclt get pods</code>
+            <span class="arrow">→</span>
+            <code class="fixed">kubectl get pods</code>
+          </div>
+          <div class="example-pair">
+            <code class="typo">kubectl delte pod nginx</code>
+            <span class="arrow">→</span>
+            <code class="fixed">kubectl delete pod nginx</code>
+          </div>
+        </div>
+        
+        <div class="example-card">
+          <div class="example-category">Rust</div>
+          <div class="example-pair">
+            <code class="typo">cagro build --release</code>
+            <span class="arrow">→</span>
+            <code class="fixed">cargo build --release</code>
+          </div>
+          <div class="example-pair">
+            <code class="typo">cargo tset</code>
+            <span class="arrow">→</span>
+            <code class="fixed">cargo test</code>
+          </div>
+        </div>
+        
+        <div class="example-card">
+          <div class="example-category">Python</div>
+          <div class="example-pair">
+            <code class="typo">pytohn script.py</code>
+            <span class="arrow">→</span>
+            <code class="fixed">python script.py</code>
+          </div>
+          <div class="example-pair">
+            <code class="typo">python -m venv enV</code>
+            <span class="arrow">→</span>
+            <code class="fixed">python -m venv env</code>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works Section -->
+  <section class="how-it-works" id="how-it-works">
+    <div class="container">
+      <div class="section-header">
+        <h2>How <span class="highlight">fix</span> works</h2>
+        <p>Simple setup, powerful results</p>
+      </div>
+      
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <h3>Install</h3>
+            <p>Download the single binary for your platform. No dependencies required.</p>
+          </div>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <h3>First Run</h3>
+            <p>On first use, fix downloads a small AI model (~400MB) fine-tuned for shell commands.</p>
+          </div>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <h3>Fix Typos</h3>
+            <p>Run <code>fix "your typo"</code> and get the corrected command instantly. No internet needed.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Install Detailed Section -->
+  <section class="install-detailed" id="install">
+    <div class="container">
+      <div class="section-header">
+        <h2>Get <span class="highlight">started</span></h2>
+        <p>Install in seconds, works forever</p>
+      </div>
+      
+      <div class="install-grid">
+        <div class="install-card">
+          <div class="platform-icon">🐧</div>
+          <h3>Linux</h3>
+          <div class="code-block">
+            <code>curl -fsSL https://animeshkundu.github.io/fix/install.sh | sh</code>
+            <button class="copy-btn" data-copy="curl -fsSL https://animeshkundu.github.io/fix/install.sh | sh" aria-label="Copy">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            </button>
+          </div>
+          <p class="platform-note">x86_64 and ARM64 supported</p>
+        </div>
+        
+        <div class="install-card">
+          <div class="platform-icon">🍎</div>
+          <h3>macOS</h3>
+          <div class="code-block">
+            <code>curl -fsSL https://animeshkundu.github.io/fix/install.sh | sh</code>
+            <button class="copy-btn" data-copy="curl -fsSL https://animeshkundu.github.io/fix/install.sh | sh" aria-label="Copy">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            </button>
+          </div>
+          <p class="platform-note">Intel and Apple Silicon with Metal GPU</p>
+        </div>
+        
+        <div class="install-card">
+          <div class="platform-icon">🪟</div>
+          <h3>Windows</h3>
+          <div class="code-block">
+            <code>irm https://animeshkundu.github.io/fix/install.ps1 | iex</code>
+            <button class="copy-btn" data-copy="irm https://animeshkundu.github.io/fix/install.ps1 | iex" aria-label="Copy">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            </button>
+          </div>
+          <p class="platform-note">PowerShell 5.1+</p>
+        </div>
+      </div>
+      
+      <!-- Shell Integration -->
+      <div class="shell-setup">
+        <h3>Shell Integration (Optional)</h3>
+        <p>Add a shortcut to fix your last command automatically:</p>
+        
+        <div class="shell-tabs">
+          <button class="shell-tab active" data-shell="bash">Bash</button>
+          <button class="shell-tab" data-shell="zsh">Zsh</button>
+          <button class="shell-tab" data-shell="fish">Fish</button>
+          <button class="shell-tab" data-shell="powershell">PowerShell</button>
+        </div>
+        
+        <div class="shell-content">
+          <div class="shell-panel active" id="bash">
+            <p class="shell-instruction">Add to <code>~/.bashrc</code>:</p>
             <div class="code-block">
-              <code>curl -fsSL https://animeshkundu.github.io/fix/install.sh | sh</code>
-              <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy to clipboard">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                </svg>
-                <span class="copied-text">Copied!</span>
+              <code>fuck() { local cmd=$(fc -ln -1); eval "$(fix "$cmd")"; }</code>
+              <button class="copy-btn" data-copy='fuck() { local cmd=$(fc -ln -1); eval "$(fix "$cmd")"; }' aria-label="Copy">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
               </button>
             </div>
-            <p class="note">Downloads the latest release and installs to <code>~/.local/bin</code></p>
           </div>
-
-          <div class="tab-content" id="windows" role="tabpanel">
+          <div class="shell-panel" id="zsh">
+            <p class="shell-instruction">Add to <code>~/.zshrc</code>:</p>
             <div class="code-block">
-              <code>iwr -useb https://animeshkundu.github.io/fix/install.ps1 | iex</code>
-              <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy to clipboard">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                </svg>
-                <span class="copied-text">Copied!</span>
+              <code>fuck() { local cmd=$(fc -ln -1); eval "$(fix "$cmd")"; }</code>
+              <button class="copy-btn" data-copy='fuck() { local cmd=$(fc -ln -1); eval "$(fix "$cmd")"; }' aria-label="Copy">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
               </button>
             </div>
-            <p class="note">Run in PowerShell. Installs to <code>%LOCALAPPDATA%\fix</code> and adds to PATH.</p>
           </div>
-
-          <div class="tab-content" id="cargo" role="tabpanel">
+          <div class="shell-panel" id="fish">
+            <p class="shell-instruction">Add to <code>~/.config/fish/functions/fuck.fish</code>:</p>
             <div class="code-block">
-              <code>cargo install --git https://github.com/animeshkundu/fix fix-cli</code>
-              <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy to clipboard">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                </svg>
-                <span class="copied-text">Copied!</span>
+              <code>function fuck; set cmd (history --max=1); eval (fix "$cmd"); end</code>
+              <button class="copy-btn" data-copy='function fuck; set cmd (history --max=1); eval (fix "$cmd"); end' aria-label="Copy">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
               </button>
             </div>
-            <p class="note">Requires Rust toolchain. Add <code>--features metal</code> on macOS for GPU acceleration.</p>
           </div>
-
-          <div class="tab-content" id="manual" role="tabpanel">
-            <p>Download the binary for your platform from <a href="https://github.com/animeshkundu/fix/releases">GitHub Releases</a>:</p>
-            <ul class="binary-list">
-              <li><code>fix-aarch64-apple-darwin.tar.gz</code> <span>macOS Apple Silicon</span></li>
-              <li><code>fix-x86_64-apple-darwin.tar.gz</code> <span>macOS Intel</span></li>
-              <li><code>fix-x86_64-unknown-linux-gnu.tar.gz</code> <span>Linux x64</span></li>
-              <li><code>fix-x86_64-pc-windows-msvc.zip</code> <span>Windows x64</span></li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section id="examples" class="examples">
-      <div class="container">
-        <h2>Examples</h2>
-        <div class="examples-table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>You typed</th>
-                <th>fix outputs</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td><code>gti status</code></td><td><code>git status</code></td></tr>
-              <tr><td><code>dcoker ps -a</code></td><td><code>docker ps -a</code></td></tr>
-              <tr><td><code>pytohn script.py</code></td><td><code>python script.py</code></td></tr>
-              <tr><td><code>npm isntall</code></td><td><code>npm install</code></td></tr>
-              <tr><td><code>kubeclt get pods</code></td><td><code>kubectl get pods</code></td></tr>
-              <tr><td><code>cagro build --release</code></td><td><code>cargo build --release</code></td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <section class="how-it-works">
-      <div class="container">
-        <h2>How it works</h2>
-        <div class="steps">
-          <div class="step">
-            <div class="step-number">1</div>
-            <div class="step-content">
-              <h3>Download</h3>
-              <p>On first run, fix downloads a small language model (~400MB) fine-tuned for shell command correction.</p>
-            </div>
-          </div>
-          <div class="step">
-            <div class="step-number">2</div>
-            <div class="step-content">
-              <h3>Run locally</h3>
-              <p>The model runs entirely on your machine using Metal (macOS) or CUDA (Linux/Windows) for fast inference.</p>
-            </div>
-          </div>
-          <div class="step">
-            <div class="step-number">3</div>
-            <div class="step-content">
-              <h3>Stay private</h3>
-              <p>Your commands never leave your computer. No telemetry, no API calls, no data collection.</p>
+          <div class="shell-panel" id="powershell">
+            <p class="shell-instruction">Add to your <code>$PROFILE</code>:</p>
+            <div class="code-block">
+              <code>function fuck { $cmd = (Get-History -Count 1).CommandLine; iex (fix $cmd) }</code>
+              <button class="copy-btn" data-copy='function fuck { $cmd = (Get-History -Count 1).CommandLine; iex (fix $cmd) }' aria-label="Copy">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              </button>
             </div>
           </div>
         </div>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <section class="usage">
-      <div class="container">
-        <h2>Usage</h2>
-        <div class="terminal-demo static">
-          <div class="terminal-header">
-            <span class="terminal-dot red"></span>
-            <span class="terminal-dot yellow"></span>
-            <span class="terminal-dot green"></span>
-          </div>
-          <div class="terminal-body">
-<pre><span class="prompt">$</span> fix --help
-Fix shell command typos using a local LLM
-
-<span class="dim">Usage:</span> fix [OPTIONS] [COMMAND]...
-
-<span class="dim">Arguments:</span>
-  [COMMAND]...  The command to correct
-
-<span class="dim">Options:</span>
-  -e, --error &lt;ERROR&gt;      Error message from failed command
-  -s, --shell &lt;SHELL&gt;      Override detected shell
-      --list-models        List available models
-      --use-model &lt;NAME&gt;   Download and set default model
-      --show-config        Show current configuration
-  -v, --verbose            Show model loading logs
-  -h, --help               Print help
-  -V, --version            Print version</pre>
-          </div>
-        </div>
+  <!-- CTA Section -->
+  <section class="cta-section">
+    <div class="container">
+      <h2>Ready to fix your typos?</h2>
+      <p>Join developers who type faster and let AI handle the mistakes.</p>
+      <div class="cta-buttons">
+        <a href="#install" class="btn btn-primary btn-lg">Install Now</a>
+        <a href="https://github.com/animeshkundu/fix" class="btn btn-outline btn-lg" target="_blank" rel="noopener">View on GitHub</a>
       </div>
-    </section>
-  </main>
+    </div>
+  </section>
 
-  <footer>
+  <!-- Footer -->
+  <footer class="footer">
     <div class="container">
       <div class="footer-content">
-        <p>MIT License</p>
+        <div class="footer-brand">
+          <span class="logo-icon">🔧</span>
+          <span class="logo-text">fix</span>
+        </div>
         <div class="footer-links">
           <a href="https://github.com/animeshkundu/fix">GitHub</a>
           <a href="https://github.com/animeshkundu/fix/releases">Releases</a>
           <a href="https://huggingface.co/animeshkundu/cmd-correct">Model</a>
         </div>
+        <p class="footer-copy">MIT License</p>
       </div>
     </div>
   </footer>
 
   <script>
-    // Tab switching
-    document.querySelectorAll('.tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        document.querySelectorAll('.tab').forEach(t => {
-          t.classList.remove('active');
-          t.setAttribute('aria-selected', 'false');
-        });
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        tab.classList.add('active');
-        tab.setAttribute('aria-selected', 'true');
-        document.getElementById(tab.dataset.tab).classList.add('active');
+    // Mobile menu toggle
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const navLinks = document.querySelector('.nav-links');
+    
+    mobileMenuBtn?.addEventListener('click', () => {
+      navLinks.classList.toggle('active');
+      mobileMenuBtn.classList.toggle('active');
+    });
+
+    // Tab switching for quick install
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tabId = btn.dataset.tab;
+        const tabGroup = btn.closest('.quick-install');
+        
+        tabGroup.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+        tabGroup.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        
+        btn.classList.add('active');
+        tabGroup.querySelector(`#${tabId}`).classList.add('active');
+      });
+    });
+
+    // Shell tabs
+    document.querySelectorAll('.shell-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const shellId = btn.dataset.shell;
+        
+        document.querySelectorAll('.shell-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.shell-panel').forEach(p => p.classList.remove('active'));
+        
+        btn.classList.add('active');
+        document.getElementById(shellId).classList.add('active');
       });
     });
 
     // Copy to clipboard
-    function copyCode(btn) {
-      const code = btn.parentElement.querySelector('code').textContent;
-      navigator.clipboard.writeText(code).then(() => {
-        btn.classList.add('copied');
-        setTimeout(() => btn.classList.remove('copied'), 2000);
+    document.querySelectorAll('.copy-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const text = btn.dataset.copy || btn.parentElement.querySelector('code').textContent;
+        navigator.clipboard.writeText(text).then(() => {
+          btn.classList.add('copied');
+          setTimeout(() => btn.classList.remove('copied'), 2000);
+        });
       });
-    }
+    });
 
     // OS detection - auto-select install tab
     function detectOS() {
       const ua = navigator.userAgent.toLowerCase();
       if (ua.includes('win')) return 'windows';
-      if (ua.includes('mac')) return 'unix';
-      if (ua.includes('linux')) return 'unix';
-      return 'unix';
+      return 'linux';
     }
 
-    // Set initial tab based on OS
     document.addEventListener('DOMContentLoaded', () => {
       const os = detectOS();
-      const tab = document.querySelector(`[data-tab="${os}"]`);
+      const tab = document.querySelector(`.quick-install [data-tab="${os}"]`);
       if (tab && !tab.classList.contains('active')) {
         tab.click();
       }
     });
 
-    // Smooth scroll for anchor links
+    // Smooth scroll
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
       anchor.addEventListener('click', function(e) {
         e.preventDefault();
@@ -304,6 +595,21 @@ Fix shell command typos using a local LLM
           target.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
       });
+    });
+
+    // Navbar scroll effect
+    let lastScroll = 0;
+    window.addEventListener('scroll', () => {
+      const navbar = document.getElementById('navbar');
+      const currentScroll = window.pageYOffset;
+      
+      if (currentScroll > 50) {
+        navbar.classList.add('scrolled');
+      } else {
+        navbar.classList.remove('scrolled');
+      }
+      
+      lastScroll = currentScroll;
     });
   </script>
 </body>
