@@ -1,5 +1,18 @@
 # AGENTS.md - AI Agent Guide for fix
 
+## Before You Start
+
+**Read the agent instructions first**: [docs/agent-instructions/](docs/agent-instructions/)
+
+1. [00-core-philosophy.md](docs/agent-instructions/00-core-philosophy.md) - Docs = Code principle
+2. [01-research-and-web.md](docs/agent-instructions/01-research-and-web.md) - Research requirements
+3. [02-testing-and-validation.md](docs/agent-instructions/02-testing-and-validation.md) - Testing standards
+4. [03-tooling-and-pipelines.md](docs/agent-instructions/03-tooling-and-pipelines.md) - CI/CD and automation
+
+**Check past decisions**: [docs/ADR/](docs/ADR/) - Architecture Decision Records
+
+---
+
 ## Project Summary
 **fix** is a shell command correction system using a fine-tuned LLM (Qwen2.5-0.5B / Qwen3-0.6B) with dual inference backends (MLX and llama.cpp).
 
@@ -166,6 +179,45 @@ JSONL with ChatML messages array: system → user (incorrect) → assistant (cor
 
 ## Related Repositories
 
-- **Training**: `Model was trained with MLX LoRA fine-tuning
+- **Training**: Model was trained with MLX LoRA fine-tuning
 - **Pipeline**: `../shellfix/` - Automated DVC pipeline for end-to-end training
-- **Models**: [animeshkundu/fix](https://huggingface.co/animeshkundu/fix) - HuggingFace model repository
+- **Models**: [animeshkundu/cmd-correct](https://huggingface.co/animeshkundu/cmd-correct) - HuggingFace model repository
+
+---
+
+## Agent Boundaries
+
+### Always Do
+- Run `cargo fmt` before committing
+- Run `./scripts/validate.sh` before pushing
+- Update documentation when changing functionality
+- Check `docs/ADR/` before making architectural changes
+- Write tests for new code
+
+### Ask First
+- Adding new dependencies to Cargo.toml
+- Changing CLI flags or public API
+- Modifying GitHub Actions workflows
+- Making breaking changes to configuration
+- Deleting or renaming public functions
+
+### Never Do
+- Commit secrets, API keys, or tokens
+- Force push to main branch
+- Delete ADRs (amend with dated additions instead)
+- Skip tests for "small" changes
+- Hallucinate API methods or library functions
+
+---
+
+## Quick Reference
+
+| Resource | Location |
+|----------|----------|
+| Agent Protocols | `docs/agent-instructions/` |
+| Architecture Decisions | `docs/ADR/` |
+| Technical Specs | `docs/specs/` |
+| Validation Script | `./scripts/validate.sh` |
+| AI Context (Claude) | `CLAUDE.md` |
+| AI Context (Copilot) | `.github/copilot-instructions.md` |
+| Documentation Index | `docs/README.md` |

@@ -211,3 +211,61 @@ The CLI uses this flow to find or download models:
                     │ default_model = <name>  │
                     └─────────────────────────┘
 ```
+
+---
+
+## Documentation Structure
+
+```
+docs/
+├── README.md                    # Documentation index
+├── ARCHITECTURE.md              # This file - system design
+├── HANDOFF.md                   # Developer onboarding
+├── HISTORY.md                   # Development timeline
+├── ADR/                         # Architecture Decision Records
+│   ├── 000-template.md          # ADR template
+│   ├── 001-gguf-model-format.md
+│   ├── 002-metal-gpu-acceleration.md
+│   ├── 003-cross-platform-support.md
+│   ├── 004-rust-cli-implementation.md
+│   └── 005-huggingface-model-distribution.md
+├── agent-instructions/          # AI agent protocols
+│   ├── 00-core-philosophy.md    # Docs = Code principle
+│   ├── 01-research-and-web.md   # Research requirements
+│   ├── 02-testing-and-validation.md
+│   └── 03-tooling-and-pipelines.md
+└── specs/                       # Technical specifications
+    └── README.md                # Spec template
+```
+
+### Documentation Flow for AI Agents
+
+```mermaid
+graph TD
+    A[New Task] --> B{Architectural?}
+    B -->|Yes| C[Check docs/ADR/]
+    B -->|No| D[Check docs/specs/]
+    C --> E{ADR exists?}
+    E -->|Yes| F[Follow existing decision]
+    E -->|No| G[Create new ADR]
+    D --> H{Spec exists?}
+    H -->|Yes| I[Follow spec]
+    H -->|No| J[Create spec if needed]
+    F --> K[Implement]
+    G --> K
+    I --> K
+    J --> K
+    K --> L[Run ./scripts/validate.sh]
+    L --> M[Update docs/HISTORY.md]
+```
+
+### Documentation Purpose Matrix
+
+| Document | When to Read | When to Update |
+|----------|--------------|----------------|
+| `AGENTS.md` | Starting any task | Adding new patterns |
+| `CLAUDE.md` | AI agent context | Changing commands/style |
+| `ADR/` | Architectural changes | New architectural decisions |
+| `specs/` | Feature implementation | New features |
+| `HISTORY.md` | Understanding past changes | After significant work |
+| `HANDOFF.md` | Onboarding | Process changes |

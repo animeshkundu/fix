@@ -10,7 +10,6 @@ target/
 /src/
 data/
 configs/
-scripts/
 tests/
 adapters/
 pyproject.toml
@@ -26,7 +25,8 @@ dist/
 build/
 
 # IDE/tool files
-.claude/
+.claude/settings*
+.claude/plans/
 tools/
 
 # Training docs (some patterns from cmd-correct-train)
