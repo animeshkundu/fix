@@ -5,8 +5,9 @@ models/
 # Rust build artifacts
 target/
 
-# Training code (see cmd-correct-train repo)
-src/
+# Training code (see oops-llm-training repo)
+# Ignore Python src but not Rust src
+/src/
 data/
 configs/
 scripts/
@@ -28,14 +29,8 @@ build/
 .claude/
 tools/
 
-# Training docs (see cmd-correct-train repo)
-docs/ADR/001-*.md
-docs/ADR/002-*.md
-docs/ADR/003-*.md
-docs/ADR/005-*.md
+# Training docs (some patterns from cmd-correct-train)
 docs/TECH_SPECS.md
-docs/HANDOFF.md
-docs/HISTORY.md
 
 # Temp pip directories
 pip-*/

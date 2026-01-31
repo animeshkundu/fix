@@ -128,13 +128,86 @@ git status
 | cmd | COMSPEC env | Windows |
 | tcsh | SHELL env | BSD/Linux |
 
-## Model Discovery
+## Model Discovery & Download
 
-The CLI searches for the model in this order:
+The CLI uses this flow to find or download models:
 
-1. `--model` flag (explicit path)
-2. Current working directory
-3. Next to the executable
-4. `~/.config/cmd-correct/`
-5. `~/.local/share/cmd-correct/` (Linux)
-6. `~/Library/Application Support/cmd-correct/` (macOS)
+```
+                    ┌─────────────────────────┐
+                    │   --model flag set?     │
+                    └───────────┬─────────────┘
+                                │
+                    ┌───────────▼─────────────┐
+                    │  Yes: Use specified path │
+                    │  No: Check config dir    │
+                    └───────────┬─────────────┘
+                                │
+                    ┌───────────▼─────────────┐
+                    │ Model exists locally?    │
+                    └───────────┬─────────────┘
+                         │             │
+                        Yes           No
+                         │             │
+                         ▼             ▼
+                    ┌─────────┐  ┌──────────────────┐
+                    │  Load   │  │ Download from HF │
+                    │  model  │  │ with progress bar│
+                    └─────────┘  └──────────────────┘
+```
+
+### Config Directory (Cross-Platform)
+
+| Platform | Path |
+|----------|------|
+| macOS | `~/Library/Application Support/cmd-correct/` |
+| Linux | `~/.config/cmd-correct/` |
+| Windows | `%APPDATA%\cmd-correct\` |
+
+### Config File Structure
+
+`config.json`:
+```json
+{
+  "default_model": "qwen3-correct-0.6B"
+}
+```
+
+### HuggingFace Integration
+
+**Repository**: `animeshkundu/cmd-correct`
+
+```
+                    ┌─────────────────────────┐
+                    │    --list-models        │
+                    └───────────┬─────────────┘
+                                │
+                    ┌───────────▼─────────────┐
+                    │ GET /api/models/{repo}/ │
+                    │     tree/main           │
+                    └───────────┬─────────────┘
+                                │
+                    ┌───────────▼─────────────┐
+                    │ Filter for .gguf files  │
+                    │ Display with sizes      │
+                    └─────────────────────────┘
+
+
+                    ┌─────────────────────────┐
+                    │ --use-model <name>      │
+                    └───────────┬─────────────┘
+                                │
+                    ┌───────────▼─────────────┐
+                    │ Validate model exists   │
+                    │ in HF repo              │
+                    └───────────┬─────────────┘
+                                │
+                    ┌───────────▼─────────────┐
+                    │ Download with progress  │
+                    │ to config_dir()         │
+                    └───────────┬─────────────┘
+                                │
+                    ┌───────────▼─────────────┐
+                    │ Update config.json      │
+                    │ default_model = <name>  │
+                    └─────────────────────────┘
+```

@@ -16,6 +16,14 @@ AI-powered shell command corrector using a fine-tuned local LLM.
 
 ```bash
 cd cmd-correct-cli
+
+# macOS with Metal GPU
+cargo build --release --features metal
+
+# Linux/Windows with CUDA
+cargo build --release --features cuda
+
+# CPU-only (any platform)
 cargo build --release
 ```
 
@@ -23,16 +31,16 @@ The binary will be at `cmd-correct-cli/target/release/cmd-correct`.
 
 ### Model Setup
 
-Download the GGUF model file and place it in one of these locations:
+**Automatic (Recommended)**: The CLI automatically downloads the model from HuggingFace on first use:
 
-1. Current working directory
-2. Next to the executable
-3. `~/.config/cmd-correct/`
-4. `~/.local/share/cmd-correct/` (Linux) or `~/Library/Application Support/cmd-correct/` (macOS)
+```bash
+cmd-correct "gti status"
+# Downloads qwen3-correct-0.6B.gguf (~378 MB) on first run
+```
 
-Or specify a custom path with `--model /path/to/model.gguf`.
+**Manual**: Or specify a custom path with `--model /path/to/model.gguf`.
 
-**Model file**: `cmd-correct-v1-q4km.gguf` (~378 MB, 4-bit quantized)
+**Model Repository**: [animeshkundu/cmd-correct](https://huggingface.co/animeshkundu/cmd-correct)
 
 ## Usage
 
@@ -51,14 +59,34 @@ cmd-correct --shell fish "gut push"
 cmd-correct --error "command not found: gti" "gti status"
 ```
 
+### Model Management
+
+```bash
+# List available models from HuggingFace
+cmd-correct --list-models
+
+# Download and set a different model as default
+cmd-correct --use-model qwen3-correct-0.6B
+
+# Show current configuration
+cmd-correct --show-config
+
+# Force re-download of current model
+cmd-correct --update "gti status"
+```
+
 ## Options
 
 ```
 -e, --error <ERROR>      Error message from the failed command
 -s, --shell <SHELL>      Override shell detection (bash, zsh, fish, powershell, cmd, tcsh)
--m, --model <MODEL>      Path to the GGUF model file
+-m, --model <MODEL>      Path to a local GGUF model file
     --gpu-layers <N>     Number of GPU layers to offload (default: 99)
 -v, --verbose            Show model loading and inference logs
+    --list-models        List available models from HuggingFace
+    --use-model <NAME>   Download and set a model as default
+    --show-config        Show current configuration
+    --update             Force re-download of current model
 -h, --help               Print help
 ```
 
@@ -129,8 +157,9 @@ The training repo contains:
 
 | Model | Size | Format | Use Case |
 |-------|------|--------|----------|
-| cmd-correct-v1-q4km.gguf | 378 MB | GGUF Q4_K_M | Production (recommended) |
-| cmd-correct-v1-f16.gguf | 1.1 GB | GGUF F16 | Higher accuracy |
+| qwen3-correct-0.6B.gguf | 378 MB | GGUF Q4_K_M | Production (recommended) |
+
+Models are hosted at [animeshkundu/cmd-correct](https://huggingface.co/animeshkundu/cmd-correct) and automatically downloaded on first use.
 
 ## License
 

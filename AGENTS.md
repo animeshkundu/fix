@@ -15,9 +15,15 @@ src/inference/
 ### Rust Native CLI
 ```
 cmd-correct-cli/
-├── src/main.rs     # Rust implementation with Metal GPU
-└── Cargo.toml      # Dependencies: llama-cpp-2, clap, dirs
+├── src/main.rs     # Rust implementation with Metal GPU (~565 lines)
+└── Cargo.toml      # Dependencies: llama-cpp-2, clap, dirs, reqwest, indicatif, serde
 ```
+
+**Key Features:**
+- Auto-downloads models from HuggingFace Hub
+- Persistent config (default model saved to config.json)
+- Cross-platform paths (macOS, Linux, Windows)
+- Progress bar for downloads
 
 ### Training Infrastructure
 ```
@@ -95,6 +101,42 @@ max_tokens=128, temperature=0.1, top_p=0.9, repetition_penalty=1.1
 | Modify CLI commands | `src/inference/cli.py` |
 | Change model paths | `src/training/config.py` or CLI flags |
 | Rust CLI changes | `cmd-correct-cli/src/main.rs` |
+| HuggingFace repo | `cmd-correct-cli/src/main.rs` → `HF_REPO` constant |
+| Default model | `cmd-correct-cli/src/main.rs` → `DEFAULT_MODEL` constant |
+
+## HuggingFace Integration (Rust CLI)
+
+**Repository**: `animeshkundu/cmd-correct`
+
+### CLI Model Management
+
+```bash
+# List available models (queries HF API)
+cmd-correct --list-models
+
+# Download and set default (persistent)
+cmd-correct --use-model qwen3-correct-0.6B
+
+# Show config
+cmd-correct --show-config
+```
+
+### Config Locations
+
+| Platform | Path |
+|----------|------|
+| macOS | `~/Library/Application Support/cmd-correct/` |
+| Linux | `~/.config/cmd-correct/` |
+| Windows | `%APPDATA%\cmd-correct\` |
+
+### Key Functions (main.rs)
+
+| Function | Purpose |
+|----------|---------|
+| `fetch_available_models()` | Query HuggingFace API for .gguf files |
+| `download_model()` | Download with progress bar |
+| `load_config()` / `save_config()` | Persistent settings |
+| `config_dir()` | Cross-platform path resolution |
 
 ## Build & Run Commands
 
@@ -122,5 +164,8 @@ bash(35%), zsh(25%), powershell(20%), cmd(12%), fish(5%), tcsh(3%)
 ## Data Format
 JSONL with ChatML messages array: system → user (incorrect) → assistant (correct)
 
-## Related Repository
-Training pipeline: `../cmd-correct-train/` (see that repo's AGENTS.md)
+## Related Repositories
+
+- **Training**: `../oops-llm-training/` - Data generation and LoRA fine-tuning
+- **Pipeline**: `../shellfix/` - Automated DVC pipeline for end-to-end training
+- **Models**: [animeshkundu/cmd-correct](https://huggingface.co/animeshkundu/cmd-correct) - HuggingFace model repository
