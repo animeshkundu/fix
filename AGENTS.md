@@ -166,6 +166,6 @@ JSONL with ChatML messages array: system → user (incorrect) → assistant (cor
 
 ## Related Repositories
 
-- **Training**: `../oops-llm-training/` - Data generation and LoRA fine-tuning
+- **Training**: `Model was trained with MLX LoRA fine-tuning
 - **Pipeline**: `../shellfix/` - Automated DVC pipeline for end-to-end training
 - **Models**: [animeshkundu/fix](https://huggingface.co/animeshkundu/fix) - HuggingFace model repository

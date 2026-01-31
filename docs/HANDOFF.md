@@ -87,5 +87,5 @@ cargo build --release
 
 ## Related Repos
 
-- `oops-llm-training/` - Training data generation and fine-tuning
+- `Training code (private)
 - `shellfix/` - Automated DVC pipeline for model training

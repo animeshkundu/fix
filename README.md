@@ -161,15 +161,10 @@ This project was inspired by these excellent command correction tools:
 
 ## Training & Model
 
-For training infrastructure, dataset generation, and model publishing, see:
-
-**[animeshkundu/oops-llm-training](https://github.com/animeshkundu/oops-llm-training)**
-
-The training repo contains:
-- Synthetic data generation pipeline (~150k examples)
-- LoRA fine-tuning code for Qwen2.5-0.5B
-- GGUF export and quantization scripts
-- Rule extractors that parse [thefuck](https://github.com/nvbn/thefuck) and [oops](https://github.com/animeshkundu/oops) for training data
+The model was trained using:
+- Synthetic data generation (~150k examples)
+- LoRA fine-tuning on Qwen3-0.6B
+- Q4_K_M quantization with importance matrix
 
 ### Training Data Coverage
 
@@ -186,7 +181,7 @@ The training repo contains:
 |-------|------|--------|----------|
 | qwen3-correct-0.6B.gguf | 378 MB | GGUF Q4_K_M | Production (recommended) |
 
-Models are hosted at [animeshkundu/fix](https://huggingface.co/animeshkundu/cmd-correct) and automatically downloaded on first use.
+Models are hosted at [animeshkundu/cmd-correct](https://huggingface.co/animeshkundu/cmd-correct) and automatically downloaded on first use.
 
 ## License
 
