@@ -306,26 +306,18 @@ end'
     return
   fi
 
-  echo ""
-  info "Shell integration"
-  echo "  Add a 'fix' function to correct your last command."
-  echo "  After setup, just type 'fix' to correct and review before running."
-  echo ""
-  printf "  Configure shell integration in ${config_file}? [Y/n] "
-  read -r REPLY
-  echo ""
+  info "Configuring shell integration in $config_file..."
 
-  if [ "$REPLY" != "n" ] && [ "$REPLY" != "N" ]; then
-    # Create directory for fish if needed
-    if [ "$shell_name" = "fish" ]; then
-      mkdir -p "$(dirname "$config_file")"
-      echo "$fix_func" > "$config_file"
-    else
-      echo "$fix_func" >> "$config_file"
-    fi
-    success "Shell integration configured in $config_file"
-    echo "  Restart your shell or run: source $config_file"
+  # Create directory for fish if needed
+  if [ "$shell_name" = "fish" ]; then
+    mkdir -p "$(dirname "$config_file")"
+    echo "$fix_func" > "$config_file"
+  else
+    echo "$fix_func" >> "$config_file"
   fi
+
+  success "Shell integration configured"
+  echo "  Restart your shell or run: source $config_file"
 }
 
 main

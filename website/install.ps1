@@ -151,25 +151,18 @@ if (Test-Path $profilePath) {
 }
 
 if (-not $alreadyConfigured) {
-    Write-Host ""
-    Write-Info "Shell integration"
-    Write-Host "  Add a 'fix' function to correct your last command."
-    Write-Host "  After setup, just type 'fix' to correct and review before running."
-    Write-Host ""
-    $response = Read-Host "  Configure shell integration in PowerShell profile? [Y/n]"
+    Write-Info "Configuring shell integration in $profilePath..."
 
-    if ($response -ne "n" -and $response -ne "N") {
-        # Create profile directory if needed
-        $profileDir = Split-Path $profilePath -Parent
-        if (-not (Test-Path $profileDir)) {
-            New-Item -ItemType Directory -Path $profileDir -Force | Out-Null
-        }
-
-        # Append to profile
-        Add-Content -Path $profilePath -Value $fixFunction
-        Write-Success "Shell integration configured in $profilePath"
-        Write-Host "  Restart PowerShell to use the 'fix' function."
+    # Create profile directory if needed
+    $profileDir = Split-Path $profilePath -Parent
+    if (-not (Test-Path $profileDir)) {
+        New-Item -ItemType Directory -Path $profileDir -Force | Out-Null
     }
+
+    # Append to profile
+    Add-Content -Path $profilePath -Value $fixFunction
+    Write-Success "Shell integration configured"
+    Write-Host "  Restart PowerShell to use the 'fix' function."
 }
 
 Write-Host ""
