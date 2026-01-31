@@ -235,18 +235,32 @@ main() {
 configure_shell_integration() {
   local shell_name=$(basename "$SHELL")
   local config_file=""
-  local fix_func=""
+
+  case "$shell_name" in
+    bash) config_file="$HOME/.bashrc" ;;
+    zsh)  config_file="$HOME/.zshrc" ;;
+    fish) config_file="$HOME/.config/fish/functions/fix.fish" ;;
+    *)    return ;;
+  esac
+
+  # Check if already configured
+  if [ -f "$config_file" ] && grep -q "fix - AI-powered shell command corrector" "$config_file" 2>/dev/null; then
+    info "Shell integration already configured in $config_file"
+    return
+  fi
+
+  info "Configuring shell integration in $config_file..."
 
   case "$shell_name" in
     bash)
-      config_file="$HOME/.bashrc"
-      fix_func='
+      cat >> "$config_file" <<'BASH_FUNC'
+
 # fix - AI-powered shell command corrector
 fix() {
     if [[ -n "$1" ]]; then
         command fix "$@"
     else
-        local cmd=$(fc -ln -1 | sed '\''s/^[[:space:]]*//'\''')
+        local cmd=$(fc -ln -1 | sed 's/^[[:space:]]*//')
         local corrected=$(command fix "$cmd" 2>/dev/null)
         if [[ -n "$corrected" && "$corrected" != "$cmd" ]]; then
             echo "Correcting: $cmd → $corrected"
@@ -256,17 +270,18 @@ fix() {
             echo "No correction needed"
         fi
     fi
-}'
+}
+BASH_FUNC
       ;;
     zsh)
-      config_file="$HOME/.zshrc"
-      fix_func='
+      cat >> "$config_file" <<'ZSH_FUNC'
+
 # fix - AI-powered shell command corrector
 fix() {
     if [[ -n "$1" ]]; then
         command fix "$@"
     else
-        local cmd=$(fc -ln -1 | sed '\''s/^[[:space:]]*//'\''')
+        local cmd=$(fc -ln -1 | sed 's/^[[:space:]]*//')
         local corrected=$(command fix "$cmd" 2>/dev/null)
         if [[ -n "$corrected" && "$corrected" != "$cmd" ]]; then
             echo "Correcting: $cmd → $corrected"
@@ -275,11 +290,14 @@ fix() {
             echo "No correction needed"
         fi
     fi
-}'
+}
+ZSH_FUNC
       ;;
     fish)
-      config_file="$HOME/.config/fish/functions/fix.fish"
-      fix_func='function fix --description '\''Fix the last command'\''
+      mkdir -p "$(dirname "$config_file")"
+      cat > "$config_file" <<'FISH_FUNC'
+# fix - AI-powered shell command corrector
+function fix --description 'Fix the last command'
     if test (count $argv) -gt 0
         command fix $argv
     else
@@ -293,28 +311,10 @@ fix() {
             echo "No correction needed"
         end
     end
-end'
-      ;;
-    *)
-      return
+end
+FISH_FUNC
       ;;
   esac
-
-  # Check if already configured
-  if [ -f "$config_file" ] && grep -q "fix - AI-powered shell command corrector" "$config_file" 2>/dev/null; then
-    info "Shell integration already configured in $config_file"
-    return
-  fi
-
-  info "Configuring shell integration in $config_file..."
-
-  # Create directory for fish if needed
-  if [ "$shell_name" = "fish" ]; then
-    mkdir -p "$(dirname "$config_file")"
-    echo "$fix_func" > "$config_file"
-  else
-    echo "$fix_func" >> "$config_file"
-  fi
 
   success "Shell integration configured"
   echo "  Restart your shell or run: source $config_file"
