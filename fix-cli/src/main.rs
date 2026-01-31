@@ -364,42 +364,53 @@ mod stderr_redirect {
 mod stderr_redirect {
     use std::fs::OpenOptions;
     use std::os::windows::io::AsRawHandle;
-    use windows_sys::Win32::Foundation::INVALID_HANDLE_VALUE;
-    use windows_sys::Win32::System::Console::{GetStdHandle, SetStdHandle, STD_ERROR_HANDLE};
 
     pub struct SavedStderr {
-        saved_handle: isize,
+        saved_fd: i32,
+    }
+
+    extern "C" {
+        fn _open_osfhandle(osfhandle: isize, flags: i32) -> i32;
     }
 
     pub fn redirect() -> Option<SavedStderr> {
         unsafe {
-            // Save current stderr handle
-            let saved = GetStdHandle(STD_ERROR_HANDLE);
-            if saved == 0 || saved == INVALID_HANDLE_VALUE {
+            // Save current stderr file descriptor (2 = stderr)
+            let saved_fd = libc::dup(2);
+            if saved_fd < 0 {
                 return None;
             }
 
             // Open NUL device
             let nul = OpenOptions::new().write(true).open("NUL").ok()?;
-
-            // Set stderr to NUL
             let nul_handle = nul.as_raw_handle() as isize;
-            if SetStdHandle(STD_ERROR_HANDLE, nul_handle) == 0 {
+
+            // Get file descriptor from Windows handle
+            let nul_fd = _open_osfhandle(nul_handle, 0);
+            if nul_fd < 0 {
+                libc::close(saved_fd);
                 return None;
             }
 
-            // Keep NUL file open (leak it intentionally)
+            // Redirect stderr (fd 2) to NUL
+            if libc::dup2(nul_fd, 2) < 0 {
+                libc::close(saved_fd);
+                libc::close(nul_fd);
+                return None;
+            }
+            libc::close(nul_fd);
+
+            // Forget the File to prevent closing the handle
             std::mem::forget(nul);
 
-            Some(SavedStderr {
-                saved_handle: saved,
-            })
+            Some(SavedStderr { saved_fd })
         }
     }
 
     pub fn restore(saved: SavedStderr) {
         unsafe {
-            SetStdHandle(STD_ERROR_HANDLE, saved.saved_handle);
+            libc::dup2(saved.saved_fd, 2);
+            libc::close(saved.saved_fd);
         }
     }
 }

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # fix installer
 # Usage: curl -fsSL https://animeshkundu.github.io/fix/install.sh | sh
 
