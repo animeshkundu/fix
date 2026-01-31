@@ -237,7 +237,8 @@ The CLI automatically downloads a fine-tuned model from HuggingFace on first use
 
 | Model | Size | Description |
 |-------|------|-------------|
-| `qwen3-correct-0.6B.gguf` | 378 MB | Production model (Q4_K_M quantized) |
+| `qwen3-correct-0.6B.gguf` | 378 MB | Default model (Q4_K_M quantized) |
+| `qwen3-correct-1.7B.gguf` | ~1.0 GB | Higher quality (Q4_K_M quantized) |
 
 Models are stored in:
 - **macOS**: `~/Library/Application Support/fix/`

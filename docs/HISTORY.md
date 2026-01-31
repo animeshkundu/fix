@@ -49,4 +49,5 @@ Key design decisions:
 
 | Date | Model | Size | Notes |
 |------|-------|------|-------|
+| Jan 31, 2025 | qwen3-correct-1.7B | ~1.0 GB | Q4_K_M quantized, larger model option |
 | Jan 2025 | qwen3-correct-0.6B | 378 MB | Q4_K_M quantized, published to HuggingFace |
