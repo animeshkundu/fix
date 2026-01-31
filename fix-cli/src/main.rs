@@ -468,6 +468,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Detect shell
     let shell = args.shell.unwrap_or_else(detect_shell);
 
+    if args.verbose {
+        eprintln!("Shell: {}", shell);
+    }
+
     // Find or download model
     let model_path = find_model_path(args.model, &config, args.update)?;
 
@@ -508,6 +512,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Build and tokenize prompt
     let prompt = build_prompt(&shell, &command, args.error.as_deref());
+
+    if args.verbose {
+        eprintln!("Prompt length: {} chars", prompt.len());
+    }
+
     let tokens = model
         .str_to_token(&prompt, llama_cpp_2::model::AddBos::Always)
         .map_err(|e| format!("Tokenization failed: {}", e))?;

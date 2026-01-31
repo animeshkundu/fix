@@ -87,9 +87,13 @@ jobs:
       # Test calling Windows binary from WSL
       - name: Test Windows binary from WSL
         shell: wsl-bash {0}
+        env:
+          WSLENV: GITHUB_WORKSPACE/p
         run: |
-          # Find the Windows binary via /mnt/c path
-          WIN_BINARY=$(wslpath -u "$GITHUB_WORKSPACE/fix-cli/target/release/fix.exe")
+          # Use the workspace path passed from Windows host
+          # The /p flag in WSLENV converts the path to WSL format
+          WORKSPACE="${GITHUB_WORKSPACE:-/mnt/d/a/fix/fix}"
+          WIN_BINARY="${WORKSPACE}/fix-cli/target/release/fix.exe"
 
           # Verify the binary exists
           if [ -f "$WIN_BINARY" ]; then
@@ -98,8 +102,9 @@ jobs:
             # Note: This will detect PowerShell/CMD shell, not WSL bash
             "$WIN_BINARY" --help || true
           else
-            echo "Windows binary not found at expected path"
-            ls -la "$(wslpath -u "$GITHUB_WORKSPACE/fix-cli/target/release/")" || true
+            echo "Windows binary not found at expected path: $WIN_BINARY"
+            echo "Trying to find it in common locations..."
+            find /mnt -name "fix.exe" 2>/dev/null | head -5 || true
           fi
 
       # Test path translation scenarios
