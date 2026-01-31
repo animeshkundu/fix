@@ -79,7 +79,7 @@ jobs:
         with:
           workspaces: fix-cli
       - name: Run tests
-        run: cargo test ${{ matrix.features && format('--features {0}', matrix.features) || '' }}
+        run: cargo test ${{ matrix.features && format('--features {0}', matrix.features) || '' }} -- --test-threads=1
 
   e2e-test:
     name: E2E Tests

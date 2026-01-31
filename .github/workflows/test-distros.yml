@@ -27,7 +27,7 @@ jobs:
       - name: Install dependencies
         run: |
           apt-get update
-          apt-get install -y curl build-essential pkg-config libssl-dev
+          apt-get install -y curl build-essential pkg-config libssl-dev cmake git
 
       # Install Rust
       - name: Install Rust
@@ -52,7 +52,7 @@ jobs:
         run: |
           . "$HOME/.cargo/env"
           cd fix-cli
-          cargo test
+          cargo test -- --test-threads=1
 
       - name: Test binary runs
         run: |
@@ -68,7 +68,7 @@ jobs:
       # Install build dependencies for Alpine
       - name: Install dependencies
         run: |
-          apk add --no-cache musl-dev openssl-dev pkgconfig build-base git
+          apk add --no-cache musl-dev openssl-dev pkgconfig build-base git cmake
 
       - name: Check libc
         run: |
@@ -85,7 +85,7 @@ jobs:
       - name: Run tests
         run: |
           cd fix-cli
-          cargo test
+          cargo test -- --test-threads=1
 
       - name: Test binary runs
         run: |
@@ -101,7 +101,7 @@ jobs:
       - name: Install dependencies
         run: |
           apt-get update
-          apt-get install -y curl build-essential pkg-config libssl-dev
+          apt-get install -y curl build-essential pkg-config libssl-dev cmake git
         env:
           DEBIAN_FRONTEND: noninteractive
 
@@ -127,7 +127,7 @@ jobs:
         run: |
           . "$HOME/.cargo/env"
           cd fix-cli
-          cargo test
+          cargo test -- --test-threads=1
 
   test-fedora:
     name: Test on Fedora (latest glibc)
@@ -138,7 +138,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          dnf install -y rust cargo gcc openssl-devel pkgconfig
+          dnf install -y rust cargo gcc openssl-devel pkgconfig cmake git
 
       - name: Check glibc version
         run: |
@@ -153,7 +153,7 @@ jobs:
       - name: Run tests
         run: |
           cd fix-cli
-          cargo test
+          cargo test -- --test-threads=1
 
   test-shell-variants:
     name: Test shell detection (${{ matrix.shell }})
@@ -195,12 +195,12 @@ jobs:
           # Set SHELL to the test shell
           export SHELL=$(which ${{ matrix.shell }})
           echo "Testing with SHELL=$SHELL"
-          cargo test detect_shell -- --nocapture
+          cargo test -- --test-threads=1 detect_shell -- --nocapture
 
       - name: Test prompt building for ${{ matrix.shell }}
         working-directory: fix-cli
         run: |
-          cargo test test_build_prompt_different_shells -- --nocapture
+          cargo test -- --test-threads=1 test_build_prompt_different_shells -- --nocapture
 
   verify-binary-portability:
     name: Verify binary portability
