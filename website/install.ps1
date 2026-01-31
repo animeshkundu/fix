@@ -79,9 +79,13 @@ if ($userPath -notlike "*$installDir*") {
     Write-Info "$installDir is already in PATH"
 }
 
-# Download default model
+# Download default model (to APPDATA, where CLI expects it)
 $modelUrl = "https://huggingface.co/animeshkundu/cmd-correct/resolve/main/qwen3-correct-0.6B.gguf"
-$modelPath = "$installDir\qwen3-correct-0.6B.gguf"
+$modelDir = "$env:APPDATA\fix"
+if (-not (Test-Path $modelDir)) {
+    New-Item -ItemType Directory -Path $modelDir -Force | Out-Null
+}
+$modelPath = "$modelDir\qwen3-correct-0.6B.gguf"
 
 if (Test-Path $modelPath) {
     Write-Info "Model already exists at $modelPath"
@@ -131,8 +135,14 @@ function fix {
         $lastCmd = (Get-History -Count 1).CommandLine
         $corrected = & $fixPath $lastCmd 2>$null
         if ($corrected -and $corrected -ne $lastCmd) {
-            Write-Host "Correcting: $lastCmd -> $corrected" -ForegroundColor Cyan
-            [Microsoft.PowerShell.PSConsoleReadLine]::Insert($corrected)
+            Write-Host "Correcting: " -NoNewline
+            Write-Host $lastCmd -ForegroundColor Red
+            Write-Host "       to: " -NoNewline
+            Write-Host $corrected -ForegroundColor Green
+            $response = Read-Host "Run? [Y/n]"
+            if ($response -ne "n" -and $response -ne "N") {
+                Invoke-Expression $corrected
+            }
         } else {
             Write-Host "No correction needed"
         }

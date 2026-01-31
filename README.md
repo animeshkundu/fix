@@ -196,8 +196,14 @@ function fix {
         $lastCmd = (Get-History -Count 1).CommandLine
         $corrected = & $fixPath $lastCmd 2>$null
         if ($corrected -and $corrected -ne $lastCmd) {
-            Write-Host "Correcting: $lastCmd -> $corrected" -ForegroundColor Cyan
-            [Microsoft.PowerShell.PSConsoleReadLine]::Insert($corrected)
+            Write-Host "Correcting: " -NoNewline
+            Write-Host $lastCmd -ForegroundColor Red
+            Write-Host "       to: " -NoNewline
+            Write-Host $corrected -ForegroundColor Green
+            $response = Read-Host "Run? [Y/n]"
+            if ($response -ne "n" -and $response -ne "N") {
+                Invoke-Expression $corrected
+            }
         } else {
             Write-Host "No correction needed"
         }
