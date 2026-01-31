@@ -2,6 +2,16 @@
 
 AI-powered shell command corrector using a fine-tuned local LLM.
 
+**[Website](https://animeshkundu.github.io/oops-llm-cli/)** | **[Model](https://huggingface.co/animeshkundu/cmd-correct)**
+
+## Quick Install
+
+```bash
+curl -fsSL https://animeshkundu.github.io/oops-llm-cli/install.sh | sh
+```
+
+Or download from [GitHub Releases](https://github.com/animeshkundu/oops-llm-cli/releases).
+
 ## Features
 
 - Corrects typos and common mistakes in shell commands
@@ -12,12 +22,29 @@ AI-powered shell command corrector using a fine-tuned local LLM.
 
 ## Installation
 
+### One-liner (macOS/Linux)
+
+```bash
+curl -fsSL https://animeshkundu.github.io/oops-llm-cli/install.sh | sh
+```
+
+### Pre-built binaries
+
+Download from [GitHub Releases](https://github.com/animeshkundu/oops-llm-cli/releases):
+
+| Platform | Binary |
+|----------|--------|
+| macOS Apple Silicon | `cmd-correct-aarch64-apple-darwin.tar.gz` |
+| macOS Intel | `cmd-correct-x86_64-apple-darwin.tar.gz` |
+| Linux x64 | `cmd-correct-x86_64-unknown-linux-gnu.tar.gz` |
+| Windows x64 | `cmd-correct-x86_64-pc-windows-msvc.zip` |
+
 ### Build from source
 
 ```bash
 cd cmd-correct-cli
 
-# macOS with Metal GPU
+# macOS with Metal GPU (recommended for Apple Silicon)
 cargo build --release --features metal
 
 # Linux/Windows with CUDA

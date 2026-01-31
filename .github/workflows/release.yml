@@ -1,0 +1,204 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'cmd-correct-cli/**'
+      - '.github/workflows/release.yml'
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Version bump type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  version:
+    name: Bump Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.bump.outputs.version }}
+      tag: ${{ steps.bump.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get latest tag
+        id: latest
+        run: |
+          tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          echo "tag=$tag" >> $GITHUB_OUTPUT
+          echo "Latest tag: $tag"
+
+      - name: Bump version
+        id: bump
+        run: |
+          current="${{ steps.latest.outputs.tag }}"
+          current="${current#v}"
+
+          IFS='.' read -r major minor patch <<< "$current"
+
+          bump_type="${{ github.event.inputs.bump || 'patch' }}"
+
+          case "$bump_type" in
+            major)
+              major=$((major + 1))
+              minor=0
+              patch=0
+              ;;
+            minor)
+              minor=$((minor + 1))
+              patch=0
+              ;;
+            patch)
+              patch=$((patch + 1))
+              ;;
+          esac
+
+          version="$major.$minor.$patch"
+          tag="v$version"
+
+          echo "version=$version" >> $GITHUB_OUTPUT
+          echo "tag=$tag" >> $GITHUB_OUTPUT
+          echo "New version: $version (tag: $tag)"
+
+      - name: Update Cargo.toml version
+        run: |
+          cd cmd-correct-cli
+          sed -i 's/^version = ".*"/version = "${{ steps.bump.outputs.version }}"/' Cargo.toml
+          cat Cargo.toml | grep -A2 '^\[package\]'
+
+      - name: Commit and tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add cmd-correct-cli/Cargo.toml
+          git diff --cached --quiet || git commit -m "chore: bump version to ${{ steps.bump.outputs.version }}"
+          git tag -a "${{ steps.bump.outputs.tag }}" -m "Release ${{ steps.bump.outputs.tag }}"
+          git push origin main --follow-tags
+
+  build:
+    name: Build (${{ matrix.target }})
+    needs: version
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: aarch64-apple-darwin
+            os: macos-14
+            features: metal
+            archive: tar.gz
+          - target: x86_64-apple-darwin
+            os: macos-13
+            features: metal
+            archive: tar.gz
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            features: ""
+            archive: tar.gz
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            features: ""
+            archive: zip
+    defaults:
+      run:
+        working-directory: cmd-correct-cli
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.version.outputs.tag }}
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: cmd-correct-cli
+
+      - name: Build
+        run: cargo build --release --target ${{ matrix.target }} ${{ matrix.features && format('--features {0}', matrix.features) || '' }}
+
+      - name: Package (Unix)
+        if: matrix.archive == 'tar.gz'
+        run: |
+          cd target/${{ matrix.target }}/release
+          tar -czvf ../../../cmd-correct-${{ matrix.target }}.tar.gz cmd-correct
+          cd ../../..
+          shasum -a 256 cmd-correct-${{ matrix.target }}.tar.gz > cmd-correct-${{ matrix.target }}.tar.gz.sha256
+
+      - name: Package (Windows)
+        if: matrix.archive == 'zip'
+        shell: pwsh
+        run: |
+          cd target/${{ matrix.target }}/release
+          Compress-Archive -Path cmd-correct.exe -DestinationPath ../../../cmd-correct-${{ matrix.target }}.zip
+          cd ../../..
+          (Get-FileHash cmd-correct-${{ matrix.target }}.zip -Algorithm SHA256).Hash.ToLower() + "  cmd-correct-${{ matrix.target }}.zip" | Out-File -Encoding utf8 cmd-correct-${{ matrix.target }}.zip.sha256
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cmd-correct-${{ matrix.target }}
+          path: |
+            cmd-correct-cli/cmd-correct-${{ matrix.target }}.*
+
+  release:
+    name: Create Release
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.version.outputs.tag }}
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: List artifacts
+        run: ls -la artifacts/
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          echo "## What's Changed" > notes.md
+          echo "" >> notes.md
+          git log --oneline $(git describe --tags --abbrev=0 HEAD^)..HEAD --pretty=format:"- %s" >> notes.md || echo "- Initial release" >> notes.md
+          echo "" >> notes.md
+          echo "" >> notes.md
+          echo "## Checksums" >> notes.md
+          echo '```' >> notes.md
+          cat artifacts/*.sha256 >> notes.md
+          echo '```' >> notes.md
+          echo "" >> notes.md
+          echo "## Installation" >> notes.md
+          echo '```bash' >> notes.md
+          echo 'curl -fsSL https://animeshkundu.github.io/oops-llm-cli/install.sh | sh' >> notes.md
+          echo '```' >> notes.md
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.version.outputs.tag }}
+          name: ${{ needs.version.outputs.tag }}
+          body_path: notes.md
+          files: artifacts/*
+          draft: false
+          prerelease: false
