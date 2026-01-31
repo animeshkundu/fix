@@ -10,7 +10,8 @@ target/
 /src/
 data/
 configs/
-tests/
+/tests/
+!fix-cli/tests/
 adapters/
 pyproject.toml
 requirements.txt

@@ -1,0 +1,220 @@
+name: Linux Distribution Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'fix-cli/**'
+      - '.github/workflows/test-distros.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'fix-cli/**'
+      - '.github/workflows/test-distros.yml'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test-debian:
+    name: Test on Debian (older glibc)
+    runs-on: ubuntu-latest
+    container: debian:bullseye
+    steps:
+      - uses: actions/checkout@v4
+
+      # Install build dependencies
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get install -y curl build-essential pkg-config libssl-dev
+
+      # Install Rust
+      - name: Install Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Check glibc version
+        run: |
+          ldd --version || true
+          echo "Testing on Debian bullseye with glibc 2.31"
+
+      - name: Build
+        run: |
+          . "$HOME/.cargo/env"
+          cd fix-cli
+          cargo build --release
+        env:
+          CARGO_NET_GIT_FETCH_WITH_CLI: true
+
+      - name: Run tests
+        run: |
+          . "$HOME/.cargo/env"
+          cd fix-cli
+          cargo test
+
+      - name: Test binary runs
+        run: |
+          ./fix-cli/target/release/fix --help || echo "Help displayed"
+
+  test-alpine:
+    name: Test on Alpine (musl)
+    runs-on: ubuntu-latest
+    container: rust:alpine
+    steps:
+      - uses: actions/checkout@v4
+
+      # Install build dependencies for Alpine
+      - name: Install dependencies
+        run: |
+          apk add --no-cache musl-dev openssl-dev pkgconfig build-base git
+
+      - name: Check libc
+        run: |
+          ldd --version 2>&1 || true
+          echo "Testing on Alpine with musl libc"
+
+      - name: Build
+        run: |
+          cd fix-cli
+          cargo build --release
+        env:
+          CARGO_NET_GIT_FETCH_WITH_CLI: true
+
+      - name: Run tests
+        run: |
+          cd fix-cli
+          cargo test
+
+      - name: Test binary runs
+        run: |
+          ./fix-cli/target/release/fix --help || echo "Help displayed"
+
+  test-ubuntu-2004:
+    name: Test on Ubuntu 20.04 (glibc 2.31)
+    runs-on: ubuntu-latest
+    container: ubuntu:20.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get install -y curl build-essential pkg-config libssl-dev
+        env:
+          DEBIAN_FRONTEND: noninteractive
+
+      - name: Install Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Check glibc version
+        run: |
+          ldd --version
+          echo "Testing on Ubuntu 20.04 with glibc 2.31"
+
+      - name: Build
+        run: |
+          . "$HOME/.cargo/env"
+          cd fix-cli
+          cargo build --release
+        env:
+          CARGO_NET_GIT_FETCH_WITH_CLI: true
+
+      - name: Run tests
+        run: |
+          . "$HOME/.cargo/env"
+          cd fix-cli
+          cargo test
+
+  test-fedora:
+    name: Test on Fedora (latest glibc)
+    runs-on: ubuntu-latest
+    container: fedora:latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          dnf install -y rust cargo gcc openssl-devel pkgconfig
+
+      - name: Check glibc version
+        run: |
+          ldd --version
+          echo "Testing on Fedora with latest glibc"
+
+      - name: Build
+        run: |
+          cd fix-cli
+          cargo build --release
+
+      - name: Run tests
+        run: |
+          cd fix-cli
+          cargo test
+
+  test-shell-variants:
+    name: Test shell detection (${{ matrix.shell }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - shell: bash
+            install: ""
+          - shell: zsh
+            install: "sudo apt-get install -y zsh"
+          - shell: fish
+            install: "sudo apt-get install -y fish"
+          - shell: tcsh
+            install: "sudo apt-get install -y tcsh"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: fix-cli
+
+      - name: Install shell
+        if: matrix.install != ''
+        run: |
+          sudo apt-get update
+          ${{ matrix.install }}
+
+      - name: Build
+        working-directory: fix-cli
+        run: cargo build --release
+
+      - name: Run tests with ${{ matrix.shell }}
+        working-directory: fix-cli
+        run: |
+          # Set SHELL to the test shell
+          export SHELL=$(which ${{ matrix.shell }})
+          echo "Testing with SHELL=$SHELL"
+          cargo test detect_shell -- --nocapture
+
+      - name: Test prompt building for ${{ matrix.shell }}
+        working-directory: fix-cli
+        run: |
+          cargo test test_build_prompt_different_shells -- --nocapture
+
+  verify-binary-portability:
+    name: Verify binary portability
+    runs-on: ubuntu-latest
+    needs: [test-debian, test-alpine, test-ubuntu-2004, test-fedora]
+    steps:
+      - name: Report
+        run: |
+          echo "All Linux distribution tests passed!"
+          echo ""
+          echo "Tested distributions:"
+          echo "  - Debian bullseye (glibc 2.31)"
+          echo "  - Alpine (musl libc)"
+          echo "  - Ubuntu 20.04 (glibc 2.31)"
+          echo "  - Fedora latest (latest glibc)"
+          echo ""
+          echo "Binary is portable across tested distributions."

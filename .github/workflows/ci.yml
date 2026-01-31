@@ -57,8 +57,18 @@ jobs:
         run: cargo build --release ${{ matrix.features && format('--features {0}', matrix.features) || '' }}
 
   test:
-    name: Test
-    runs-on: ubuntu-latest
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            features: metal
+          - os: ubuntu-latest
+            features: ""
+          - os: windows-latest
+            features: ""
     defaults:
       run:
         working-directory: fix-cli
@@ -69,4 +79,55 @@ jobs:
         with:
           workspaces: fix-cli
       - name: Run tests
-        run: cargo test
+        run: cargo test ${{ matrix.features && format('--features {0}', matrix.features) || '' }}
+
+  e2e-test:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: build
+    defaults:
+      run:
+        working-directory: fix-cli
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: fix-cli
+
+      # Cache the model to avoid re-downloading
+      - name: Cache model
+        uses: actions/cache@v4
+        with:
+          path: ~/.config/fix/qwen3-correct-0.6B.gguf
+          key: model-qwen3-correct-0.6B-v1
+
+      - name: Build release
+        run: cargo build --release
+
+      - name: Download model if not cached
+        run: |
+          mkdir -p ~/.config/fix
+          if [ ! -f ~/.config/fix/qwen3-correct-0.6B.gguf ]; then
+            echo "Downloading model..."
+            curl -fSL --progress-bar \
+              "https://huggingface.co/animeshkundu/cmd-correct/resolve/main/qwen3-correct-0.6B.gguf" \
+              -o ~/.config/fix/qwen3-correct-0.6B.gguf
+          else
+            echo "Model already cached"
+          fi
+
+      - name: Run E2E tests
+        run: cargo test --test e2e_test -- --ignored --test-threads=1
+
+      - name: Quick inference test
+        run: |
+          result=$(./target/release/fix "gti status" 2>/dev/null)
+          echo "Input: gti status"
+          echo "Output: $result"
+          if [ "$result" = "git status" ]; then
+            echo "E2E inference test PASSED"
+          else
+            echo "E2E inference test FAILED"
+            exit 1
+          fi
