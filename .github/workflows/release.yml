@@ -164,8 +164,10 @@ jobs:
         run: |
           cd target/${{ matrix.target }}/release
           tar -czvf ../../../fix-${{ matrix.target }}.tar.gz fix
+          tar -czvf ../../../wit-${{ matrix.target }}.tar.gz wit
           cd ../../..
           shasum -a 256 fix-${{ matrix.target }}.tar.gz > fix-${{ matrix.target }}.tar.gz.sha256
+          shasum -a 256 wit-${{ matrix.target }}.tar.gz > wit-${{ matrix.target }}.tar.gz.sha256
 
       - name: Package (Windows)
         if: matrix.archive == 'zip'
@@ -173,8 +175,10 @@ jobs:
         run: |
           cd target/${{ matrix.target }}/release
           Compress-Archive -Path fix.exe -DestinationPath ../../../fix-${{ matrix.target }}.zip
+          Compress-Archive -Path wit.exe -DestinationPath ../../../wit-${{ matrix.target }}.zip
           cd ../../..
           (Get-FileHash fix-${{ matrix.target }}.zip -Algorithm SHA256).Hash.ToLower() + "  fix-${{ matrix.target }}.zip" | Out-File -Encoding utf8 fix-${{ matrix.target }}.zip.sha256
+          (Get-FileHash wit-${{ matrix.target }}.zip -Algorithm SHA256).Hash.ToLower() + "  wit-${{ matrix.target }}.zip" | Out-File -Encoding utf8 wit-${{ matrix.target }}.zip.sha256
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -182,6 +186,7 @@ jobs:
           name: fix-${{ matrix.target }}
           path: |
             fix-cli/fix-${{ matrix.target }}.*
+            fix-cli/wit-${{ matrix.target }}.*
 
   release:
     name: Create Release

@@ -13,6 +13,8 @@ No API keys. No internet required. Sub-100ms on Apple Silicon.
 
 ## Quick Install
 
+### fix (fast command correction)
+
 **macOS / Linux:**
 
 ```bash
@@ -25,6 +27,22 @@ curl -fsSL https://animeshkundu.github.io/fix/install.sh | sh
 iwr -useb https://animeshkundu.github.io/fix/install.ps1 | iex
 ```
 
+### wit (smart correction with agentic capabilities - preview)
+
+**macOS / Linux:**
+
+```bash
+curl -fsSL https://animeshkundu.github.io/fix/install.sh | sh -s wit
+```
+
+**Windows (PowerShell):**
+
+```powershell
+iwr -useb https://animeshkundu.github.io/fix/install.ps1 | iex -args wit
+```
+
+**Note:** `wit` is currently a preview/placeholder. Full agentic implementation coming soon.
+
 ## Features
 
 - Corrects typos and common mistakes in shell commands
@@ -36,6 +54,8 @@ iwr -useb https://animeshkundu.github.io/fix/install.ps1 | iex
 
 ## Usage
 
+### fix - Fast Command Correction
+
 ```bash
 # Basic correction
 fix "gti status"
@@ -46,6 +66,16 @@ fix -e "command not found: gti" "gti status"
 
 # Specify shell explicitly
 fix -s fish "gut push"
+```
+
+### wit - Smart Correction (Preview)
+
+```bash
+# Check configuration
+wit --show-config
+
+# Future: Context-aware corrections with agentic capabilities
+# (Full implementation coming in future releases)
 ```
 
 ### Model Management
@@ -82,6 +112,8 @@ choco install fix-cli
 
 Download from [GitHub Releases](https://github.com/animeshkundu/fix/releases):
 
+**fix:**
+
 | Platform | Binary |
 |----------|--------|
 | macOS Apple Silicon | `fix-aarch64-apple-darwin.tar.gz` |
@@ -90,6 +122,17 @@ Download from [GitHub Releases](https://github.com/animeshkundu/fix/releases):
 | Linux ARM64 | `fix-aarch64-unknown-linux-gnu.tar.gz` |
 | Linux x64 (Alpine/musl) | `fix-x86_64-unknown-linux-musl.tar.gz` |
 | Windows x64 | `fix-x86_64-pc-windows-msvc.zip` |
+
+**wit:**
+
+| Platform | Binary |
+|----------|--------|
+| macOS Apple Silicon | `wit-aarch64-apple-darwin.tar.gz` |
+| macOS Intel | `wit-x86_64-apple-darwin.tar.gz` |
+| Linux x64 | `wit-x86_64-unknown-linux-gnu.tar.gz` |
+| Linux ARM64 | `wit-aarch64-unknown-linux-gnu.tar.gz` |
+| Linux x64 (Alpine/musl) | `wit-x86_64-unknown-linux-musl.tar.gz` |
+| Windows x64 | `wit-x86_64-pc-windows-msvc.zip` |
 
 ### Build from Source
 

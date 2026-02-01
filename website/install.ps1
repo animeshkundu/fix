@@ -1,10 +1,12 @@
-# fix installer for Windows
+# fix/wit installer for Windows
 # Usage: iwr -useb https://animeshkundu.github.io/fix/install.ps1 | iex
+# Usage: iwr -useb https://animeshkundu.github.io/fix/install.ps1 | iex -args wit
 
 $ErrorActionPreference = 'Stop'
 
 $repo = "animeshkundu/fix"
-$binary = "fix"
+# Default to 'fix', but allow override via argument
+$binary = if ($args.Count -gt 0) { $args[0] } else { "fix" }
 
 function Write-Info { param($msg) Write-Host "==> " -ForegroundColor Blue -NoNewline; Write-Host $msg }
 function Write-Success { param($msg) Write-Host "==> " -ForegroundColor Green -NoNewline; Write-Host $msg }
@@ -85,10 +87,10 @@ function Build-FromSource {
     Write-Info "Building with cargo (this may take several minutes)..."
     try {
         $env:PATH = "$env:USERPROFILE\.cargo\bin;$env:PATH"
-        & cargo install --git "https://github.com/$repo" fix
+        & cargo install --git "https://github.com/$repo" $binary
 
         # Copy from cargo bin to install dir
-        $cargoBin = "$env:USERPROFILE\.cargo\bin\fix.exe"
+        $cargoBin = "$env:USERPROFILE\.cargo\bin\$binary.exe"
         if (Test-Path $cargoBin) {
             if (-not (Test-Path $installDir)) {
                 New-Item -ItemType Directory -Path $installDir -Force | Out-Null
@@ -113,7 +115,7 @@ function Invoke-BuildFromSource {
     } else {
         Write-Host ""
         Write-Host "You can build manually later with:"
-        Write-Host "  cargo install --git https://github.com/$repo fix"
+        Write-Host "  cargo install --git https://github.com/$repo $binary"
         return $false
     }
 }
@@ -223,26 +225,40 @@ if (Test-Path $modelPath) {
 # Verify installation with test command
 Write-Info "Testing installation..."
 try {
-    $testOutput = & $exePath "gti status" 2>&1 | Out-String
-    $testOutput = $testOutput.Trim()
-    if ($testOutput -eq "git status") {
-        Write-Success "Test passed! 'gti status' -> 'git status'"
+    if ($binary -eq "wit") {
+        # wit is a placeholder - just check it runs and shows help
+        $testOutput = & $exePath "--show-config" 2>&1 | Out-String
+        $testOutput = $testOutput.Trim()
+        if ($testOutput -match "Configuration:") {
+            Write-Success "Test passed! $binary --show-config works"
+        } else {
+            Write-Host "warning: " -ForegroundColor Yellow -NoNewline
+            Write-Host "Test produced: $testOutput"
+        }
     } else {
-        Write-Host "warning: " -ForegroundColor Yellow -NoNewline
-        Write-Host "Test produced: $testOutput"
-        Write-Host ""
-        Write-Host "If this doesn't look right, try:"
-        Write-Host "  - Ensure GPU drivers are up to date"
-        Write-Host "  - Run '$binary --verbose gti status' for debug output"
+        # fix: test command correction
+        $testOutput = & $exePath "gti status" 2>&1 | Out-String
+        $testOutput = $testOutput.Trim()
+        if ($testOutput -eq "git status") {
+            Write-Success "Test passed! 'gti status' -> 'git status'"
+        } else {
+            Write-Host "warning: " -ForegroundColor Yellow -NoNewline
+            Write-Host "Test produced: $testOutput"
+            Write-Host ""
+            Write-Host "If this doesn't look right, try:"
+            Write-Host "  - Ensure GPU drivers are up to date"
+            Write-Host "  - Run '$binary --verbose gti status' for debug output"
+        }
     }
 } catch {
     Write-Host "warning: " -ForegroundColor Yellow -NoNewline
     Write-Host "Test failed: $_"
 }
 
-# Configure shell integration
-$profilePath = $PROFILE.CurrentUserCurrentHost
-$fixFunction = @'
+# Configure shell integration (only for 'fix' binary)
+if ($binary -eq "fix") {
+    $profilePath = $PROFILE.CurrentUserCurrentHost
+    $fixFunction = @'
 
 # fix - AI-powered shell command corrector
 function fix {
@@ -269,29 +285,30 @@ function fix {
 }
 '@
 
-# Check if already configured
-$alreadyConfigured = $false
-if (Test-Path $profilePath) {
-    $profileContent = Get-Content $profilePath -Raw -ErrorAction SilentlyContinue
-    if ($profileContent -match "fix - AI-powered shell command corrector") {
-        $alreadyConfigured = $true
-        Write-Info "Shell integration already configured in $profilePath"
-    }
-}
-
-if (-not $alreadyConfigured) {
-    Write-Info "Configuring shell integration in $profilePath..."
-
-    # Create profile directory if needed
-    $profileDir = Split-Path $profilePath -Parent
-    if (-not (Test-Path $profileDir)) {
-        New-Item -ItemType Directory -Path $profileDir -Force | Out-Null
+    # Check if already configured
+    $alreadyConfigured = $false
+    if (Test-Path $profilePath) {
+        $profileContent = Get-Content $profilePath -Raw -ErrorAction SilentlyContinue
+        if ($profileContent -match "fix - AI-powered shell command corrector") {
+            $alreadyConfigured = $true
+            Write-Info "Shell integration already configured in $profilePath"
+        }
     }
 
-    # Append to profile
-    Add-Content -Path $profilePath -Value $fixFunction
-    Write-Success "Shell integration configured"
-    Write-Host "  Restart PowerShell to use the 'fix' function."
+    if (-not $alreadyConfigured) {
+        Write-Info "Configuring shell integration in $profilePath..."
+
+        # Create profile directory if needed
+        $profileDir = Split-Path $profilePath -Parent
+        if (-not (Test-Path $profileDir)) {
+            New-Item -ItemType Directory -Path $profileDir -Force | Out-Null
+        }
+
+        # Append to profile
+        Add-Content -Path $profilePath -Value $fixFunction
+        Write-Success "Shell integration configured"
+        Write-Host "  Restart PowerShell to use the 'fix' function."
+    }
 }
 
 Write-Host ""
