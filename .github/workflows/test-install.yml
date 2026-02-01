@@ -157,7 +157,9 @@ jobs:
             [ref]$errors
           )
           if ($errors.Count -gt 0) {
-            $errors | ForEach-Object { Write-Error $_.Message }
+            $errors | ForEach-Object {
+              Write-Host "Line $($_.Extent.StartLineNumber):$($_.Extent.StartColumnNumber) - $($_.Message)" -ForegroundColor Red
+            }
             exit 1
           }
           Write-Host "PowerShell script syntax is valid"

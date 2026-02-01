@@ -233,33 +233,35 @@ function Configure-ShellIntegration {
     $profilePath = $PROFILE.CurrentUserCurrentHost
     $marker = "$binaryName - AI-powered shell command corrector"
 
-    # Generate the function for this binary
-    $shellFunction = @"
+    # Generate the function for this binary using literal here-string
+    $shellFunction = @'
 
-# $binaryName - AI-powered shell command corrector
-function $binaryName {
-    param([Parameter(ValueFromRemainingArguments=`$true)]`$args)
-    `$binPath = "`$env:LOCALAPPDATA\fix\$binaryName.exe"
-    if (`$args) {
-        & `$binPath @args
+# __BINARY_NAME__ - AI-powered shell command corrector
+function __BINARY_NAME__ {
+    param([Parameter(ValueFromRemainingArguments=$true)]$args)
+    $binPath = "$env:LOCALAPPDATA\fix\__BINARY_NAME__.exe"
+    if ($args) {
+        & $binPath @args
     } else {
-        `$lastCmd = (Get-History -Count 1).CommandLine
-        `$corrected = & `$binPath `$lastCmd 2>`$null
-        if (`$corrected -and `$corrected -ne `$lastCmd) {
+        $lastCmd = (Get-History -Count 1).CommandLine
+        $corrected = & $binPath $lastCmd 2>$null
+        if ($corrected -and $corrected -ne $lastCmd) {
             Write-Host "Correcting: " -NoNewline
-            Write-Host `$lastCmd -ForegroundColor Red
+            Write-Host $lastCmd -ForegroundColor Red
             Write-Host "       to: " -NoNewline
-            Write-Host `$corrected -ForegroundColor Green
-            `$response = Read-Host "Run? [Y/n]"
-            if (`$response -ne "n" -and `$response -ne "N") {
-                Invoke-Expression `$corrected
+            Write-Host $corrected -ForegroundColor Green
+            $response = Read-Host "Run? [Y/n]"
+            if ($response -ne "n" -and $response -ne "N") {
+                Invoke-Expression $corrected
             }
         } else {
             Write-Host "No correction needed"
         }
     }
 }
-"@
+'@
+    # Replace placeholder with actual binary name
+    $shellFunction = $shellFunction -replace '__BINARY_NAME__', $binaryName
 
     # Check if already configured
     $alreadyConfigured = $false
