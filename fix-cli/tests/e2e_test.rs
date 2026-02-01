@@ -130,10 +130,21 @@ fn test_e2e_flag_correction() {
 
     let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
 
-    // ls -la should be kept as-is (correct command)
+    // ls -la should be kept as-is on Unix, or translated to PowerShell equivalent on Windows
+    #[cfg(not(target_os = "windows"))]
     assert!(
         stdout == "ls -la" || stdout == "ls -al",
         "Should not change correct 'ls -la' command, got: {}",
+        stdout
+    );
+
+    #[cfg(target_os = "windows")]
+    assert!(
+        stdout.contains("Get-ChildItem")
+            || stdout.contains("dir")
+            || stdout == "ls -la"
+            || stdout == "ls -al",
+        "Should translate 'ls -la' to PowerShell equivalent or keep as-is, got: {}",
         stdout
     );
 }
@@ -198,10 +209,18 @@ fn test_e2e_pipe_commands() {
 
     let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
 
-    // Should correct gerp to grep
+    // Should correct gerp to grep on Unix, or translate to PowerShell equivalent on Windows
+    #[cfg(not(target_os = "windows"))]
     assert!(
         stdout.contains("grep"),
         "Should correct 'gerp' to 'grep' in pipe command: {}",
+        stdout
+    );
+
+    #[cfg(target_os = "windows")]
+    assert!(
+        stdout.contains("grep") || stdout.contains("Select-String") || stdout.contains("findstr"),
+        "Should correct pipe command with typo or translate to PowerShell: {}",
         stdout
     );
 }
