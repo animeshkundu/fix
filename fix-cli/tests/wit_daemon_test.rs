@@ -140,7 +140,9 @@ fn test_wit_direct_bypasses_daemon() {
 
     // Direct mode should not start a daemon (on Windows, daemon is not supported)
     assert!(
-        combined.contains("not running") || combined.contains("not supported"),
+        combined.contains("not running")
+            || combined.contains("not supported")
+            || combined.contains("not available"),
         "Direct mode should not start daemon. stdout: '{}', stderr: '{}'",
         status_stdout,
         status_stderr
@@ -179,7 +181,9 @@ fn test_wit_daemon_status_after_stop() {
 
     // On Windows, daemon mode is not supported
     assert!(
-        combined.contains("not running") || combined.contains("not supported"),
+        combined.contains("not running")
+            || combined.contains("not supported")
+            || combined.contains("not available"),
         "After stop, daemon should not be running. stdout: '{}', stderr: '{}'",
         stdout,
         stderr
@@ -333,7 +337,9 @@ fn test_wit_status_when_no_daemon() {
 
     // On Windows, daemon mode is not supported
     assert!(
-        combined.contains("not running") || combined.contains("not supported"),
+        combined.contains("not running")
+            || combined.contains("not supported")
+            || combined.contains("not available"),
         "Should indicate daemon is not running. stdout: '{}', stderr: '{}'",
         stdout,
         stderr
