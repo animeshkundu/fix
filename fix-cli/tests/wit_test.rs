@@ -60,7 +60,7 @@ fn test_wit_accepts_quiet_flag() {
 
     // Should not crash with --quiet flag
     assert!(
-        output.status.success() || output.status.code() == Some(0),
+        output.status.success(),
         "wit --quiet should exit cleanly"
     );
 
@@ -107,7 +107,7 @@ fn test_wit_quiet_and_verbose_together() {
 
     // Both flags should work together
     assert!(
-        output.status.success() || output.status.code() == Some(0),
+        output.status.success(),
         "wit should handle both flags"
     );
 
@@ -153,7 +153,7 @@ fn test_wit_with_command() {
 
     // Should exit cleanly (even if it's a placeholder)
     assert!(
-        output.status.success() || output.status.code() == Some(0),
+        output.status.success(),
         "wit should handle commands"
     );
 
