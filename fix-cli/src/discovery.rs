@@ -4,6 +4,7 @@
 //! and extracts their descriptions from --help or --version output.
 
 use crate::cache::{ToolInfo, ToolsCache};
+use std::collections::hash_map::Entry;
 use std::collections::HashSet;
 use std::env;
 use std::fs;
@@ -194,15 +195,12 @@ pub fn discover_tools() -> ToolsCache {
         }
 
         if let Some(name) = get_tool_name(path) {
-            if !cache.tools.contains_key(&name) {
+            if let Entry::Vacant(e) = cache.tools.entry(name) {
                 if let Some(desc) = extract_description(path) {
-                    cache.tools.insert(
-                        name,
-                        ToolInfo {
-                            path: path.to_string_lossy().to_string(),
-                            desc,
-                        },
-                    );
+                    e.insert(ToolInfo {
+                        path: path.to_string_lossy().to_string(),
+                        desc,
+                    });
                     processed_count += 1;
                 }
             }
