@@ -48,7 +48,7 @@ impl ProgressSpinner {
             pb.set_style(
                 ProgressStyle::default_spinner()
                     .template("{spinner:.cyan} {msg}")
-                    .unwrap(),
+                    .expect("Invalid progress spinner template format"),
             );
             pb.enable_steady_tick(Duration::from_millis(100));
             self.pb = Some(pb);

@@ -6,7 +6,7 @@ use std::process::Command;
 
 /// Get the path to the compiled wit binary
 fn get_wit_binary_path() -> String {
-    let mut path = std::env::current_exe().unwrap();
+    let mut path = std::env::current_exe().expect("Failed to get current executable path");
     path.pop(); // Remove test binary name
     path.pop(); // Remove deps
     path.push("wit");
@@ -32,7 +32,7 @@ fn test_wit_help_includes_quiet_flag() {
     let output = Command::new(get_wit_binary_path())
         .arg("--help")
         .output()
-        .expect("Failed to execute wit");
+        .expect("Failed to execute wit --help command");
 
     let stdout = String::from_utf8_lossy(&output.stdout);
 
@@ -56,7 +56,7 @@ fn test_wit_accepts_quiet_flag() {
     let output = Command::new(get_wit_binary_path())
         .args(["--quiet", "test command"])
         .output()
-        .expect("Failed to execute wit");
+        .expect("Failed to execute wit --quiet command");
 
     // Should not crash with --quiet flag
     assert!(
@@ -82,7 +82,7 @@ fn test_wit_accepts_verbose_flag() {
     let output = Command::new(get_wit_binary_path())
         .args(["--verbose", "test command"])
         .output()
-        .expect("Failed to execute wit");
+        .expect("Failed to execute wit --verbose command");
 
     let stderr = String::from_utf8_lossy(&output.stderr);
 
@@ -103,7 +103,7 @@ fn test_wit_quiet_and_verbose_together() {
     let output = Command::new(get_wit_binary_path())
         .args(["--quiet", "--verbose", "test command"])
         .output()
-        .expect("Failed to execute wit");
+        .expect("Failed to execute wit with --quiet --verbose flags");
 
     // Both flags should work together
     assert!(
@@ -128,7 +128,7 @@ fn test_wit_show_config() {
     let output = Command::new(get_wit_binary_path())
         .arg("--show-config")
         .output()
-        .expect("Failed to execute wit");
+        .expect("Failed to execute wit --show-config command");
 
     assert!(output.status.success(), "show-config should succeed");
 
@@ -149,7 +149,7 @@ fn test_wit_with_command() {
     let output = Command::new(get_wit_binary_path())
         .arg("gti status")
         .output()
-        .expect("Failed to execute wit");
+        .expect("Failed to execute wit with command argument");
 
     // Should exit cleanly (even if it's a placeholder)
     assert!(
@@ -173,7 +173,7 @@ fn test_wit_without_command() {
 
     let output = Command::new(get_wit_binary_path())
         .output()
-        .expect("Failed to execute wit");
+        .expect("Failed to execute wit without arguments");
 
     // Should exit with error code when no command provided
     assert!(
