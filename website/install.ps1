@@ -214,7 +214,7 @@ function Test-Binary {
             $testOutput = & $exePath "gti status" 2>&1 | Out-String
             $testOutput = $testOutput.Trim()
             if ($testOutput -eq "git status") {
-                Write-Success "Test passed! $binaryName: 'gti status' -> 'git status'"
+                Write-Success "Test passed! ${binaryName}: 'gti status' -> 'git status'"
                 return $true
             }
         }
