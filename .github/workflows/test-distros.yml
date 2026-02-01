@@ -61,41 +61,69 @@ jobs:
         run: |
           ./fix-cli/target/release/fix --help || echo "Help displayed"
 
-  test-alpine:
-    name: Test on Alpine (musl)
-    runs-on: ubuntu-latest
-    container: rust:alpine
-    # Allow failure: musl doesn't support dynamic loading required by bindgen/libclang
-    # See: https://github.com/rust-lang/rust-bindgen/issues/1292
-    continue-on-error: true
+  # Build MUSL binary using cross-compilation (bindgen works on glibc)
+  build-musl:
+    name: Build MUSL binary
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
 
-      # Install build dependencies for Alpine
-      - name: Install dependencies
-        run: |
-          apk add --no-cache musl-dev openssl-dev pkgconfig build-base git cmake clang-dev
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-musl
 
-      - name: Check libc
-        run: |
-          ldd --version 2>&1 || true
-          echo "Testing on Alpine with musl libc"
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: fix-cli
 
-      - name: Build
-        run: |
-          cd fix-cli
-          cargo build --release
-        env:
-          CARGO_NET_GIT_FETCH_WITH_CLI: true
+      - name: Install cross
+        run: cargo install cross --git https://github.com/cross-rs/cross
 
-      - name: Run tests
+      - name: Build with cross for MUSL
+        working-directory: fix-cli
+        run: cross build --release --target x86_64-unknown-linux-musl
+
+      - name: Upload MUSL binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: fix-musl
+          path: fix-cli/target/x86_64-unknown-linux-musl/release/fix
+
+  # Test the cross-compiled MUSL binary on Alpine
+  test-alpine:
+    name: Test on Alpine (musl)
+    runs-on: ubuntu-latest
+    needs: build-musl
+    container: alpine:latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download MUSL binary
+        uses: actions/download-artifact@v4
+        with:
+          name: fix-musl
+          path: bin
+
+      - name: Setup binary
         run: |
-          cd fix-cli
-          cargo test -- --test-threads=1
+          chmod +x bin/fix
+          cp bin/fix /usr/local/bin/fix
+
+      - name: Check Alpine environment
+        run: |
+          cat /etc/os-release
+          echo "Testing MUSL binary on Alpine"
 
       - name: Test binary runs
         run: |
-          ./fix-cli/target/release/fix --help || echo "Help displayed"
+          fix --help
+          fix --version
+
+      - name: Test binary with mock command
+        run: |
+          # Binary should run and exit cleanly even without model
+          # (will fail with "model not found" but proves binary works on MUSL)
+          fix "gti status" 2>&1 || echo "Expected: model download or not found message"
 
   test-ubuntu-2004:
     name: Test on Ubuntu 20.04 (glibc 2.31)
@@ -214,7 +242,7 @@ jobs:
   verify-binary-portability:
     name: Verify binary portability
     runs-on: ubuntu-latest
-    needs: [test-debian, test-alpine, test-ubuntu-2004, test-fedora]
+    needs: [test-debian, test-alpine, test-ubuntu-2004, test-fedora, test-shell-variants]
     steps:
       - name: Report
         run: |
@@ -222,8 +250,10 @@ jobs:
           echo ""
           echo "Tested distributions:"
           echo "  - Debian bullseye (glibc 2.31)"
-          echo "  - Alpine (musl libc)"
+          echo "  - Alpine (musl libc) - via cross-compiled binary"
           echo "  - Ubuntu 20.04 (glibc 2.31)"
           echo "  - Fedora latest (latest glibc)"
+          echo ""
+          echo "Tested shells: bash, zsh, fish, tcsh"
           echo ""
           echo "Binary is portable across tested distributions."

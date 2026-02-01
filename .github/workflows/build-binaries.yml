@@ -1,0 +1,125 @@
+name: Build Binaries
+
+# Reusable workflow that builds release binaries for all platforms
+# Other workflows can depend on this via workflow_call
+
+on:
+  workflow_call:
+    outputs:
+      artifact-prefix:
+        description: 'Prefix for artifact names'
+        value: 'fix-binary'
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Build (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # macOS ARM64 (M1/M2)
+          - target: aarch64-apple-darwin
+            os: macos-14
+            features: metal
+            cross: false
+          # macOS Intel
+          - target: x86_64-apple-darwin
+            os: macos-15
+            features: metal
+            cross: false
+          # Linux x64 (glibc)
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-20.04
+            features: ""
+            cross: false
+          # Linux ARM64 (glibc)
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-22.04
+            features: ""
+            cross: true
+          # Linux x64 (MUSL/Alpine)
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-22.04
+            features: ""
+            cross: true
+          # Windows x64
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            features: ""
+            cross: false
+
+    defaults:
+      run:
+        working-directory: fix-cli
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: fix-cli
+          shared-key: build-${{ matrix.target }}
+
+      - name: Install cross-compilation tools
+        if: matrix.cross
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+          cargo install cross --git https://github.com/cross-rs/cross
+
+      - name: Build (native)
+        if: ${{ !matrix.cross }}
+        run: cargo build --release --target ${{ matrix.target }} ${{ matrix.features && format('--features {0}', matrix.features) || '' }}
+
+      - name: Build (cross-compile)
+        if: matrix.cross
+        run: cross build --release --target ${{ matrix.target }} ${{ matrix.features && format('--features {0}', matrix.features) || '' }}
+
+      - name: Prepare binary (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          mkdir -p artifacts
+          cp target/${{ matrix.target }}/release/fix artifacts/fix-${{ matrix.target }}
+          chmod +x artifacts/fix-${{ matrix.target }}
+
+      - name: Prepare binary (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path artifacts -Force | Out-Null
+          Copy-Item target/${{ matrix.target }}/release/fix.exe artifacts/fix-${{ matrix.target }}.exe
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fix-binary-${{ matrix.target }}
+          path: fix-cli/artifacts/
+          retention-days: 7
+
+  # Summary job that reports all builds completed
+  build-complete:
+    name: All Builds Complete
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Summary
+        run: |
+          echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All platform binaries built successfully:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- aarch64-apple-darwin (macOS ARM64)" >> $GITHUB_STEP_SUMMARY
+          echo "- x86_64-apple-darwin (macOS Intel)" >> $GITHUB_STEP_SUMMARY
+          echo "- x86_64-unknown-linux-gnu (Linux x64)" >> $GITHUB_STEP_SUMMARY
+          echo "- aarch64-unknown-linux-gnu (Linux ARM64)" >> $GITHUB_STEP_SUMMARY
+          echo "- x86_64-unknown-linux-musl (Alpine/MUSL)" >> $GITHUB_STEP_SUMMARY
+          echo "- x86_64-pc-windows-msvc (Windows x64)" >> $GITHUB_STEP_SUMMARY

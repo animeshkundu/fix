@@ -272,3 +272,115 @@ fn test_e2e_inference_time() {
 
     eprintln!("Inference completed in {:?}", duration);
 }
+
+#[test]
+#[ignore]
+fn test_e2e_output_is_clean_command_only() {
+    if !binary_exists() || !model_exists() {
+        eprintln!("Binary or model not found, skipping");
+        return;
+    }
+
+    // Test multiple inputs to ensure output is always clean
+    let test_cases = vec![
+        "gti status",
+        "dcoker ps",
+        "nmp install",
+        "pytohn script.py",
+    ];
+
+    for input in test_cases {
+        let output = Command::new(get_binary_path())
+            .arg(input)
+            .output()
+            .expect("Failed to execute binary");
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let stdout_trimmed = stdout.trim();
+
+        // Must be single line
+        let line_count = stdout_trimmed.lines().count();
+        assert!(
+            line_count <= 1,
+            "Output for '{}' has {} lines, expected 1. Output: '{}'",
+            input,
+            line_count,
+            stdout_trimmed
+        );
+
+        // Must not contain ChatML tokens
+        assert!(
+            !stdout.contains("<|im_start|>"),
+            "Output for '{}' contains <|im_start|>",
+            input
+        );
+        assert!(
+            !stdout.contains("<|im_end|>"),
+            "Output for '{}' contains <|im_end|>",
+            input
+        );
+
+        // Must not contain role prefixes
+        assert!(
+            !stdout.contains("assistant"),
+            "Output for '{}' contains 'assistant'",
+            input
+        );
+        assert!(
+            !stdout.contains("system"),
+            "Output for '{}' contains 'system'",
+            input
+        );
+
+        // Must not contain common model artifacts
+        let artifacts = ["command >", "Command:", ">>>", "```", "Output:"];
+        for artifact in artifacts {
+            assert!(
+                !stdout.contains(artifact),
+                "Output for '{}' contains artifact '{}'. Full output: '{}'",
+                input,
+                artifact,
+                stdout_trimmed
+            );
+        }
+
+        eprintln!("Clean output check passed for '{}' -> '{}'", input, stdout_trimmed);
+    }
+}
+
+#[test]
+#[ignore]
+fn test_e2e_shell_override() {
+    if !binary_exists() || !model_exists() {
+        eprintln!("Binary or model not found, skipping");
+        return;
+    }
+
+    // Test that --shell flag works correctly
+    let shells = vec!["bash", "zsh", "fish", "powershell"];
+
+    for shell in shells {
+        let output = Command::new(get_binary_path())
+            .args(["--shell", shell, "gti status"])
+            .output()
+            .expect("Failed to execute binary");
+
+        let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+
+        // Should still produce a valid correction regardless of shell
+        assert!(
+            !stdout.is_empty(),
+            "Output for shell '{}' is empty",
+            shell
+        );
+
+        // Output should be clean
+        assert!(
+            !stdout.contains("<|im_start|>") && !stdout.contains("<|im_end|>"),
+            "Output for shell '{}' contains ChatML tokens",
+            shell
+        );
+
+        eprintln!("Shell override '{}' -> '{}'", shell, stdout);
+    }
+}

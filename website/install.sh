@@ -442,6 +442,7 @@ configure_shell_integration() {
     bash) config_file="$HOME/.bashrc" ;;
     zsh)  config_file="$HOME/.zshrc" ;;
     fish) config_file="$HOME/.config/fish/functions/fix.fish" ;;
+    tcsh) config_file="$HOME/.tcshrc" ;;
     *)    return ;;
   esac
 
@@ -515,6 +516,13 @@ function fix --description 'Fix the last command'
     end
 end
 FISH_FUNC
+      ;;
+    tcsh)
+      cat >> "$config_file" <<'TCSH_FUNC'
+
+# fix - AI-powered shell command corrector
+alias fixlast 'set _cmd = `history -h 1` && set _fix = `fix "$_cmd"` && echo "Correcting: $_cmd -> $_fix" && eval "$_fix"'
+TCSH_FUNC
       ;;
   esac
 

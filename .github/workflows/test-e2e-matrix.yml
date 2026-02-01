@@ -1,0 +1,269 @@
+name: E2E Tests Matrix
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'fix-cli/**'
+      - '.github/workflows/test-e2e-matrix.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'fix-cli/**'
+      - '.github/workflows/test-e2e-matrix.yml'
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  MODEL_NAME: qwen3-correct-0.6B.gguf
+  MODEL_URL: https://huggingface.co/animeshkundu/cmd-correct/resolve/main/qwen3-correct-0.6B.gguf
+
+jobs:
+  # Build binaries for all platforms first
+  build-binaries:
+    uses: ./.github/workflows/build-binaries.yml
+
+  # Download model once and share via artifact
+  download-model:
+    name: Download Model
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache model
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: model-cache
+          key: model-qwen3-correct-0.6B-v2
+
+      - name: Download if not cached
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p model-cache
+          echo "Downloading model from HuggingFace..."
+          curl -fSL --progress-bar "$MODEL_URL" -o "model-cache/$MODEL_NAME"
+          ls -lh model-cache/
+
+      - name: Upload model artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: model
+          path: model-cache/${{ env.MODEL_NAME }}
+          retention-days: 1
+
+  # E2E test matrix across OS and shell combinations
+  e2e-test:
+    name: E2E (${{ matrix.os }}, ${{ matrix.shell }})
+    needs: [build-binaries, download-model]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # macOS with Metal GPU
+          - os: macos-14
+            target: aarch64-apple-darwin
+            shell: zsh
+            config_path: ~/Library/Application Support/fix
+          - os: macos-14
+            target: aarch64-apple-darwin
+            shell: bash
+            config_path: ~/Library/Application Support/fix
+
+          # Linux (CPU only)
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            shell: bash
+            config_path: ~/.config/fix
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            shell: zsh
+            config_path: ~/.config/fix
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            shell: fish
+            config_path: ~/.config/fix
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            shell: tcsh
+            config_path: ~/.config/fix
+
+          # Windows (CPU only)
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            shell: powershell
+            config_path: $env:APPDATA\fix
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: fix-cli
+
+      - name: Download pre-built binary
+        uses: actions/download-artifact@v4
+        with:
+          name: fix-binary-${{ matrix.target }}
+          path: binary-download
+
+      - name: Download model artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: model
+          path: model-download
+
+      # Setup model path - Unix (Linux)
+      - name: Setup model path (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          mkdir -p ~/.config/fix
+          cp model-download/${{ env.MODEL_NAME }} ~/.config/fix/
+          ls -lh ~/.config/fix/
+
+      # Setup model path - macOS
+      - name: Setup model path (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          mkdir -p "$HOME/Library/Application Support/fix"
+          cp model-download/${{ env.MODEL_NAME }} "$HOME/Library/Application Support/fix/"
+          ls -lh "$HOME/Library/Application Support/fix/"
+
+      # Setup model path - Windows
+      - name: Setup model path (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path "$env:APPDATA\fix" -Force | Out-Null
+          Copy-Item "model-download/${{ env.MODEL_NAME }}" "$env:APPDATA\fix\"
+          Get-ChildItem "$env:APPDATA\fix"
+
+      # Install shells if needed (Linux)
+      - name: Install zsh
+        if: matrix.shell == 'zsh' && runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y zsh
+
+      - name: Install fish
+        if: matrix.shell == 'fish' && runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y fish
+
+      - name: Install tcsh
+        if: matrix.shell == 'tcsh' && runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y tcsh
+
+      # Setup pre-built binary
+      - name: Setup binary (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          mkdir -p fix-cli/target/release
+          cp binary-download/fix-${{ matrix.target }} fix-cli/target/release/fix
+          chmod +x fix-cli/target/release/fix
+          echo "Binary ready at fix-cli/target/release/fix"
+          fix-cli/target/release/fix --version
+
+      - name: Setup binary (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path fix-cli/target/release -Force | Out-Null
+          Copy-Item binary-download/fix-${{ matrix.target }}.exe fix-cli/target/release/fix.exe
+          Write-Host "Binary ready at fix-cli/target/release/fix.exe"
+          & fix-cli/target/release/fix.exe --version
+
+      # Run E2E tests (these require building the test harness, but not the binary)
+      - name: Run E2E tests (Unix)
+        if: runner.os != 'Windows'
+        working-directory: fix-cli
+        run: cargo test --test e2e_test -- --ignored --test-threads=1
+        env:
+          SHELL: /bin/${{ matrix.shell }}
+
+      - name: Run E2E tests (Windows)
+        if: runner.os == 'Windows'
+        working-directory: fix-cli
+        shell: pwsh
+        run: cargo test --test e2e_test -- --ignored --test-threads=1
+
+      # Quick inference test with output verification
+      - name: Quick inference test (Unix)
+        if: runner.os != 'Windows'
+        working-directory: fix-cli
+        run: |
+          echo "Testing: gti status -> git status"
+          result=$(./target/release/fix "gti status" 2>/dev/null)
+          echo "Output: '$result'"
+
+          # Verify output is exactly what we expect
+          if [ "$result" = "git status" ]; then
+            echo "PASS: Output is correct"
+          else
+            echo "FAIL: Expected 'git status', got '$result'"
+            exit 1
+          fi
+
+          # Verify output is clean (no artifacts)
+          if echo "$result" | grep -qE '<\|im_start\|>|<\|im_end\|>|assistant|system|command >'; then
+            echo "FAIL: Output contains model artifacts"
+            exit 1
+          fi
+
+          # Verify single line
+          line_count=$(echo "$result" | wc -l | tr -d ' ')
+          if [ "$line_count" != "1" ]; then
+            echo "FAIL: Output has $line_count lines, expected 1"
+            exit 1
+          fi
+
+          echo "All output verification checks passed"
+
+      - name: Quick inference test (Windows)
+        if: runner.os == 'Windows'
+        working-directory: fix-cli
+        shell: pwsh
+        run: |
+          Write-Host "Testing: gti status -> git status"
+          $result = & ./target/release/fix.exe "gti status" 2>$null
+          Write-Host "Output: '$result'"
+
+          if ($result -eq "git status") {
+            Write-Host "PASS: Output is correct"
+          } else {
+            Write-Host "FAIL: Expected 'git status', got '$result'"
+            exit 1
+          }
+
+          # Verify no artifacts
+          if ($result -match '<\|im_start\|>|<\|im_end\|>|assistant|system|command >') {
+            Write-Host "FAIL: Output contains model artifacts"
+            exit 1
+          }
+
+          Write-Host "All output verification checks passed"
+
+      # Additional typo tests
+      - name: Additional inference tests (Unix)
+        if: runner.os != 'Windows'
+        working-directory: fix-cli
+        run: |
+          echo "Testing additional typos..."
+
+          # Test docker typo
+          result=$(./target/release/fix "dcoker ps" 2>/dev/null)
+          if [ "$result" = "docker ps" ]; then
+            echo "PASS: dcoker ps -> docker ps"
+          else
+            echo "WARN: dcoker ps -> $result (expected docker ps)"
+          fi
+
+          # Test npm typo
+          result=$(./target/release/fix "nmp install" 2>/dev/null)
+          if [ "$result" = "npm install" ]; then
+            echo "PASS: nmp install -> npm install"
+          else
+            echo "WARN: nmp install -> $result (expected npm install)"
+          fi
+
+          echo "Additional tests completed"

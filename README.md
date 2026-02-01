@@ -88,6 +88,7 @@ Download from [GitHub Releases](https://github.com/animeshkundu/fix/releases):
 | macOS Intel | `fix-x86_64-apple-darwin.tar.gz` |
 | Linux x64 | `fix-x86_64-unknown-linux-gnu.tar.gz` |
 | Linux ARM64 | `fix-aarch64-unknown-linux-gnu.tar.gz` |
+| Linux x64 (Alpine/musl) | `fix-x86_64-unknown-linux-musl.tar.gz` |
 | Windows x64 | `fix-x86_64-pc-windows-msvc.zip` |
 
 ### Build from Source
