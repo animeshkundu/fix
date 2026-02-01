@@ -94,10 +94,7 @@ fn test_wit_no_args_shows_usage() {
         .expect("Failed to execute wit binary");
 
     // Should show usage when no command provided
-    assert!(
-        !output.status.success(),
-        "No args should cause error exit"
-    );
+    assert!(!output.status.success(), "No args should cause error exit");
 
     let stderr = String::from_utf8_lossy(&output.stderr);
     assert!(
@@ -225,7 +222,9 @@ fn test_wit_show_config() {
 
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(
-        stdout.contains("Configuration") || stdout.contains("Wit model") || stdout.contains("model"),
+        stdout.contains("Configuration")
+            || stdout.contains("Wit model")
+            || stdout.contains("model"),
         "show-config should display configuration: {}",
         stdout
     );
@@ -254,7 +253,10 @@ fn test_wit_status_flag() {
     let combined = format!("{}{}", stdout, stderr);
 
     assert!(
-        combined.contains("Daemon") || combined.contains("not running") || combined.contains("running") || combined.contains("Socket"),
+        combined.contains("Daemon")
+            || combined.contains("not running")
+            || combined.contains("running")
+            || combined.contains("Socket"),
         "Status should show daemon state. stdout: '{}', stderr: '{}'",
         stdout,
         stderr
@@ -282,7 +284,9 @@ fn test_wit_stop_flag() {
     let combined = format!("{}{}", stdout, stderr);
 
     assert!(
-        combined.contains("stopped") || combined.contains("Daemon") || combined.contains("unloaded"),
+        combined.contains("stopped")
+            || combined.contains("Daemon")
+            || combined.contains("unloaded"),
         "Stop should confirm daemon state. stdout: '{}', stderr: '{}'",
         stdout,
         stderr

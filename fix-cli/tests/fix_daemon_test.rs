@@ -47,7 +47,10 @@ fn test_fix_status_flag() {
     let combined = format!("{}{}", stdout, stderr);
 
     assert!(
-        combined.contains("Daemon") || combined.contains("not running") || combined.contains("running") || combined.contains("Socket"),
+        combined.contains("Daemon")
+            || combined.contains("not running")
+            || combined.contains("running")
+            || combined.contains("Socket"),
         "Status should show daemon state. stdout: '{}', stderr: '{}'",
         stdout,
         stderr
@@ -75,7 +78,9 @@ fn test_fix_stop_flag() {
     let combined = format!("{}{}", stdout, stderr);
 
     assert!(
-        combined.contains("stopped") || combined.contains("Daemon") || combined.contains("unloaded"),
+        combined.contains("stopped")
+            || combined.contains("Daemon")
+            || combined.contains("unloaded"),
         "Stop should confirm daemon state. stdout: '{}', stderr: '{}'",
         stdout,
         stderr
@@ -115,9 +120,7 @@ fn test_fix_direct_bypasses_daemon() {
     }
 
     // First stop any running daemon
-    let _ = Command::new(get_binary_path())
-        .arg("--stop")
-        .output();
+    let _ = Command::new(get_binary_path()).arg("--stop").output();
 
     // Then run in direct mode
     let output = Command::new(get_binary_path())
@@ -301,10 +304,7 @@ fn test_fix_multiple_stops_ok() {
             .output()
             .expect("Failed to execute fix binary");
 
-        assert!(
-            output.status.success(),
-            "Multiple stops should all succeed"
-        );
+        assert!(output.status.success(), "Multiple stops should all succeed");
     }
 }
 
@@ -316,9 +316,7 @@ fn test_fix_status_when_no_daemon() {
     }
 
     // Stop daemon first
-    let _ = Command::new(get_binary_path())
-        .arg("--stop")
-        .output();
+    let _ = Command::new(get_binary_path()).arg("--stop").output();
 
     // Status should work and indicate no daemon
     let output = Command::new(get_binary_path())

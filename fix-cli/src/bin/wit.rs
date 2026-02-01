@@ -797,7 +797,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         eprintln!(
             "Error: {}",
-            response.error.unwrap_or_else(|| "Unknown error".to_string())
+            response
+                .error
+                .unwrap_or_else(|| "Unknown error".to_string())
         );
         std::process::exit(1);
     }
