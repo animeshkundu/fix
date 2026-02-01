@@ -26,13 +26,14 @@ fn wit_binary_exists() -> bool {
     std::path::Path::new(&get_wit_binary_path()).exists()
 }
 
-/// Get the expected model path
+/// Get the expected model path for wit
 fn get_model_path() -> PathBuf {
     let config_dir = dirs::config_dir()
         .unwrap_or_else(|| env::current_dir().unwrap())
         .join("fix");
 
-    config_dir.join("qwen3-correct-0.6B.gguf")
+    // wit uses qwen3-wit-1.7B model
+    config_dir.join("qwen3-wit-1.7B.gguf")
 }
 
 /// Check if model is downloaded
@@ -130,6 +131,10 @@ fn test_wit_progress_indicators() {
         eprintln!("wit binary not found, skipping test");
         return;
     }
+    if !model_exists() {
+        eprintln!("Model not found, skipping test that requires inference");
+        return;
+    }
 
     let output = run_wit(&["gti status"]);
     let _stderr = String::from_utf8_lossy(&output.stderr);
@@ -143,6 +148,10 @@ fn test_wit_progress_indicators() {
 fn test_wit_quiet_mode_disables_progress() {
     if !wit_binary_exists() {
         eprintln!("wit binary not found, skipping test");
+        return;
+    }
+    if !model_exists() {
+        eprintln!("Model not found, skipping test that requires inference");
         return;
     }
 
@@ -162,6 +171,10 @@ fn test_wit_verbose_mode() {
         eprintln!("wit binary not found, skipping test");
         return;
     }
+    if !model_exists() {
+        eprintln!("Model not found, skipping test that requires inference");
+        return;
+    }
 
     let output = run_wit(&["--verbose", "test command"]);
     let stderr = String::from_utf8_lossy(&output.stderr);
@@ -178,6 +191,10 @@ fn test_wit_verbose_mode() {
 fn test_wit_quiet_and_verbose_together() {
     if !wit_binary_exists() {
         eprintln!("wit binary not found, skipping test");
+        return;
+    }
+    if !model_exists() {
+        eprintln!("Model not found, skipping test that requires inference");
         return;
     }
 
@@ -203,6 +220,10 @@ fn test_wit_quiet_and_verbose_together() {
 fn test_wit_shell_override() {
     if !wit_binary_exists() {
         eprintln!("wit binary not found, skipping test");
+        return;
+    }
+    if !model_exists() {
+        eprintln!("Model not found, skipping test that requires inference");
         return;
     }
 
