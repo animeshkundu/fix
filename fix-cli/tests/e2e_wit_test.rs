@@ -395,10 +395,7 @@ fn test_e2e_wit_timeout_handling() {
     let output = run_wit(&["gti status"]);
     let duration = start.elapsed();
 
-    assert!(
-        output.status.success(),
-        "wit should complete successfully"
-    );
+    assert!(output.status.success(), "wit should complete successfully");
 
     // Should complete in reasonable time (adjust based on actual performance)
     assert!(
@@ -479,7 +476,10 @@ fn test_e2e_wit_special_characters() {
     let output = run_wit(&["echo \"hello world\""]);
     let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
 
-    assert!(output.status.success(), "wit should handle special characters");
+    assert!(
+        output.status.success(),
+        "wit should handle special characters"
+    );
     // Should preserve quotes and special characters
     assert!(
         stdout.contains("echo") && stdout.contains("hello"),
