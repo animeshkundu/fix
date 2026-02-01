@@ -1,14 +1,13 @@
 //! fix - Fast shell command correction CLI
 //!
 //! A command-line tool that corrects shell command typos using a local LLM.
-//! Uses daemon mode by default to keep the model loaded for fast inference.
+//! Uses daemon mode by default on Unix to keep the model loaded for fast inference.
 //! Example: `fix "gti status"` → `git status`
 
 use clap::Parser;
 use fix_lib::{
     build_prompt, config_path, detect_shell, download_model, find_model_path, get_model_path,
-    list_models, load_config, save_config, stderr_redirect, suppress_llama_logs,
-    validate_model_exists,
+    list_models, load_config, save_config, suppress_llama_logs, validate_model_exists,
 };
 use llama_cpp_2::context::params::LlamaContextParams;
 use llama_cpp_2::llama_backend::LlamaBackend;
@@ -16,19 +15,32 @@ use llama_cpp_2::llama_batch::LlamaBatch;
 use llama_cpp_2::model::params::LlamaModelParams;
 use llama_cpp_2::model::LlamaModel;
 use llama_cpp_2::token::data_array::LlamaTokenDataArray;
-use serde::{Deserialize, Serialize};
-use std::fs;
-use std::io::{BufRead, BufReader, Write};
-use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::PathBuf;
+
+// Unix-specific imports for daemon mode
+#[cfg(unix)]
+use fix_lib::stderr_redirect;
+#[cfg(unix)]
+use serde::{Deserialize, Serialize};
+#[cfg(unix)]
+use std::fs;
+#[cfg(unix)]
+use std::io::{BufRead, BufReader, Write};
+#[cfg(unix)]
+use std::os::unix::net::{UnixListener, UnixStream};
+#[cfg(unix)]
 use std::sync::atomic::{AtomicBool, Ordering};
+#[cfg(unix)]
 use std::sync::{Arc, Mutex};
+#[cfg(unix)]
 use std::time::{Duration, Instant};
 
 /// Idle timeout before daemon auto-shuts down (1 hour)
+#[cfg(unix)]
 const IDLE_TIMEOUT_SECS: u64 = 3600;
 
 /// Socket path for daemon communication
+#[cfg(unix)]
 fn socket_path() -> PathBuf {
     let mut path = std::env::temp_dir();
     path.push(format!("fix-daemon-{}.sock", users::get_current_uid()));
@@ -36,6 +48,7 @@ fn socket_path() -> PathBuf {
 }
 
 /// PID file path for single instance check
+#[cfg(unix)]
 fn pid_path() -> PathBuf {
     let mut path = std::env::temp_dir();
     path.push(format!("fix-daemon-{}.pid", users::get_current_uid()));
@@ -86,11 +99,11 @@ struct Args {
     #[arg(long)]
     show_config: bool,
 
-    /// Stop the daemon and unload model from memory
+    /// Stop the daemon and unload model from memory (Unix only)
     #[arg(long)]
     stop: bool,
 
-    /// Show daemon status
+    /// Show daemon status (Unix only)
     #[arg(long)]
     status: bool,
 
@@ -98,12 +111,13 @@ struct Args {
     #[arg(long)]
     direct: bool,
 
-    /// Run as daemon (internal use)
+    /// Run as daemon (internal use, Unix only)
     #[arg(long, hide = true)]
     daemon: bool,
 }
 
 /// Request sent to daemon
+#[cfg(unix)]
 #[derive(Serialize, Deserialize, Debug)]
 struct DaemonRequest {
     command: String,
@@ -113,6 +127,7 @@ struct DaemonRequest {
 }
 
 /// Response from daemon
+#[cfg(unix)]
 #[derive(Serialize, Deserialize, Debug)]
 struct DaemonResponse {
     success: bool,
@@ -121,6 +136,7 @@ struct DaemonResponse {
 }
 
 /// Check if daemon is running
+#[cfg(unix)]
 fn is_daemon_running() -> bool {
     let pid_file = pid_path();
     if !pid_file.exists() {
@@ -143,6 +159,7 @@ fn is_daemon_running() -> bool {
 }
 
 /// Start daemon in background
+#[cfg(unix)]
 fn start_daemon(model_path: &PathBuf, gpu_layers: u32) -> Result<(), String> {
     let exe = std::env::current_exe().map_err(|e| format!("Failed to get executable: {}", e))?;
 
@@ -172,6 +189,7 @@ fn start_daemon(model_path: &PathBuf, gpu_layers: u32) -> Result<(), String> {
 }
 
 /// Stop the daemon
+#[cfg(unix)]
 fn stop_daemon() -> Result<(), String> {
     if !is_daemon_running() {
         return Ok(());
@@ -196,6 +214,7 @@ fn stop_daemon() -> Result<(), String> {
 }
 
 /// Send request to daemon
+#[cfg(unix)]
 fn send_to_daemon(request: &DaemonRequest) -> Result<DaemonResponse, String> {
     let mut stream =
         UnixStream::connect(socket_path()).map_err(|e| format!("Failed to connect: {}", e))?;
@@ -325,7 +344,8 @@ fn run_inference(
     Ok(result.to_string())
 }
 
-/// Run daemon mode
+/// Run daemon mode (Unix only)
+#[cfg(unix)]
 fn run_daemon(model_path: PathBuf, gpu_layers: u32) -> Result<(), Box<dyn std::error::Error>> {
     let _ = fs::remove_file(socket_path());
 
@@ -461,7 +481,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
     let mut config = load_config();
 
-    // Handle daemon mode (internal)
+    // Handle daemon mode (internal, Unix only)
+    #[cfg(unix)]
     if args.daemon {
         let model_path = args
             .model
@@ -469,21 +490,35 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return run_daemon(model_path, args.gpu_layers);
     }
 
-    // Handle --stop flag
+    // Handle --stop flag (Unix only)
     if args.stop {
-        stop_daemon()?;
-        eprintln!("✓ Daemon stopped, model unloaded");
+        #[cfg(unix)]
+        {
+            stop_daemon()?;
+            eprintln!("✓ Daemon stopped, model unloaded");
+        }
+        #[cfg(not(unix))]
+        {
+            eprintln!("Daemon mode is not supported on Windows");
+        }
         return Ok(());
     }
 
-    // Handle --status flag
+    // Handle --status flag (Unix only)
     if args.status {
-        if is_daemon_running() {
-            println!("Daemon: running");
-            println!("Socket: {}", socket_path().display());
-            println!("PID file: {}", pid_path().display());
-        } else {
-            println!("Daemon: not running");
+        #[cfg(unix)]
+        {
+            if is_daemon_running() {
+                println!("Daemon: running");
+                println!("Socket: {}", socket_path().display());
+                println!("PID file: {}", pid_path().display());
+            } else {
+                println!("Daemon: not running");
+            }
+        }
+        #[cfg(not(unix))]
+        {
+            println!("Daemon mode is not supported on Windows");
         }
         return Ok(());
     }
@@ -504,8 +539,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         } else {
             println!("  Model path: (not downloaded)");
         }
-        println!("  Daemon running: {}", is_daemon_running());
-        println!("  Socket: {}", socket_path().display());
+        #[cfg(unix)]
+        {
+            println!("  Daemon running: {}", is_daemon_running());
+            println!("  Socket: {}", socket_path().display());
+        }
+        #[cfg(not(unix))]
+        {
+            println!("  Daemon: not available (Windows)");
+        }
         return Ok(());
     }
 
@@ -517,6 +559,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         save_config(&config)?;
         eprintln!("✓ Default model set to: {}", model_name);
 
+        #[cfg(unix)]
         if is_daemon_running() {
             stop_daemon()?;
             eprintln!("✓ Daemon restarted to use new model");
@@ -530,9 +573,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         eprintln!("       fix --list-models");
         eprintln!("       fix --use-model <name>");
         eprintln!("       fix --show-config");
-        eprintln!("       fix --stop          # Unload model from memory");
-        eprintln!("       fix --status        # Show daemon status");
-        eprintln!("       fix --direct <cmd>  # Run without daemon");
+        #[cfg(unix)]
+        {
+            eprintln!("       fix --stop          # Unload model from memory");
+            eprintln!("       fix --status        # Show daemon status");
+            eprintln!("       fix --direct <cmd>  # Run without daemon");
+        }
         std::process::exit(1);
     }
 
@@ -547,8 +593,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Find or download model
     let model_path = find_model_path(args.model, &config, args.update)?;
 
-    // Direct mode
-    if args.direct {
+    // Direct mode (always on Windows, or when explicitly requested)
+    #[cfg(not(unix))]
+    let use_direct = true;
+    #[cfg(unix)]
+    let use_direct = args.direct;
+
+    if use_direct {
         let result = run_direct(
             &command,
             &shell,
@@ -567,35 +618,38 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
-    // Daemon mode (default)
-    if !is_daemon_running() {
-        start_daemon(&model_path, args.gpu_layers)?;
-    }
+    // Daemon mode (Unix only, default)
+    #[cfg(unix)]
+    {
+        if !is_daemon_running() {
+            start_daemon(&model_path, args.gpu_layers)?;
+        }
 
-    let request = DaemonRequest {
-        command: command.clone(),
-        shell,
-        error: args.error,
-        verbose: args.verbose,
-    };
+        let request = DaemonRequest {
+            command: command.clone(),
+            shell,
+            error: args.error,
+            verbose: args.verbose,
+        };
 
-    let response = send_to_daemon(&request)?;
+        let response = send_to_daemon(&request)?;
 
-    if response.success {
-        if !response.output.is_empty() {
-            println!("{}", response.output);
+        if response.success {
+            if !response.output.is_empty() {
+                println!("{}", response.output);
+            } else {
+                eprintln!("Could not correct command");
+                std::process::exit(1);
+            }
         } else {
-            eprintln!("Could not correct command");
+            eprintln!(
+                "Error: {}",
+                response
+                    .error
+                    .unwrap_or_else(|| "Unknown error".to_string())
+            );
             std::process::exit(1);
         }
-    } else {
-        eprintln!(
-            "Error: {}",
-            response
-                .error
-                .unwrap_or_else(|| "Unknown error".to_string())
-        );
-        std::process::exit(1);
     }
 
     Ok(())
