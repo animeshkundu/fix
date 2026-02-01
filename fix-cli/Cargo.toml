@@ -5,6 +5,18 @@ edition = "2021"
 description = "AI-powered shell command corrector"
 license = "MIT"
 
+[lib]
+name = "fix_lib"
+path = "src/lib.rs"
+
+[[bin]]
+name = "fix"
+path = "src/bin/fix.rs"
+
+[[bin]]
+name = "wit"
+path = "src/bin/wit.rs"
+
 [features]
 default = []
 metal = ["llama-cpp-2/metal"]

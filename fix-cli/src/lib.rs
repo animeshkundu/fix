@@ -1,11 +1,9 @@
-use clap::Parser;
+//! fix_lib - Shared library for the fix CLI tools
+//!
+//! This library provides common functionality for shell command correction,
+//! including model management, shell detection, and prompt building.
+
 use indicatif::{ProgressBar, ProgressStyle};
-use llama_cpp_2::context::params::LlamaContextParams;
-use llama_cpp_2::llama_backend::LlamaBackend;
-use llama_cpp_2::llama_batch::LlamaBatch;
-use llama_cpp_2::model::params::LlamaModelParams;
-use llama_cpp_2::model::LlamaModel;
-use llama_cpp_2::token::data_array::LlamaTokenDataArray;
 use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -13,57 +11,20 @@ use std::fs::File;
 use std::io::{Read, Write};
 use std::path::PathBuf;
 
-const HF_REPO: &str = "animeshkundu/cmd-correct";
-const DEFAULT_MODEL: &str = "qwen3-correct-0.6B";
+// ===== Constants =====
 
-#[derive(Parser, Debug)]
-#[command(name = "fix")]
-#[command(about = "Fix shell command typos using a local LLM", long_about = None)]
-struct Args {
-    /// The failed command to correct (optional for management commands)
-    #[arg(num_args = 0..)]
-    command: Vec<String>,
+/// HuggingFace repository containing the model files
+pub const HF_REPO: &str = "animeshkundu/cmd-correct";
 
-    /// Error message from the failed command (optional)
-    #[arg(short, long)]
-    error: Option<String>,
+/// Default model name used when no model is specified
+pub const DEFAULT_MODEL: &str = "qwen3-correct-0.6B";
 
-    /// Override shell detection (bash, zsh, fish, powershell, cmd, tcsh)
-    #[arg(short, long)]
-    shell: Option<String>,
+// ===== Configuration =====
 
-    /// Path to a local GGUF model file (overrides default)
-    #[arg(short, long)]
-    model: Option<PathBuf>,
-
-    /// Number of GPU layers to offload (default: all)
-    #[arg(long, default_value = "99")]
-    gpu_layers: u32,
-
-    /// Show model loading and inference logs
-    #[arg(short, long)]
-    verbose: bool,
-
-    /// List available models from HuggingFace
-    #[arg(long)]
-    list_models: bool,
-
-    /// Download and set a model as default
-    #[arg(long)]
-    use_model: Option<String>,
-
-    /// Force re-download of current model
-    #[arg(long)]
-    update: bool,
-
-    /// Show current configuration
-    #[arg(long)]
-    show_config: bool,
-}
-
-#[derive(Serialize, Deserialize)]
-struct Config {
-    default_model: String,
+/// Persistent configuration for the fix CLI
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Config {
+    pub default_model: String,
 }
 
 impl Default for Config {
@@ -74,23 +35,28 @@ impl Default for Config {
     }
 }
 
-struct AvailableModel {
-    name: String,
-    size: u64,
+/// Represents an available model on HuggingFace
+pub struct AvailableModel {
+    pub name: String,
+    pub size: u64,
 }
 
-// Cross-platform config directory
-fn config_dir() -> PathBuf {
+// ===== Path Functions =====
+
+/// Get the platform-specific configuration directory for the fix CLI
+pub fn config_dir() -> PathBuf {
     dirs::config_dir()
         .unwrap_or_else(|| env::current_dir().unwrap_or_else(|_| PathBuf::from(".")))
         .join("fix")
 }
 
-fn config_path() -> PathBuf {
+/// Get the path to the configuration file
+pub fn config_path() -> PathBuf {
     config_dir().join("config.json")
 }
 
-fn load_config() -> Config {
+/// Load configuration from disk, returning default if not found
+pub fn load_config() -> Config {
     let path = config_path();
     if path.exists() {
         if let Ok(content) = std::fs::read_to_string(&path) {
@@ -102,7 +68,8 @@ fn load_config() -> Config {
     Config::default()
 }
 
-fn save_config(config: &Config) -> Result<(), String> {
+/// Save configuration to disk
+pub fn save_config(config: &Config) -> Result<(), String> {
     let dir = config_dir();
     std::fs::create_dir_all(&dir)
         .map_err(|e| format!("Failed to create config directory: {}", e))?;
@@ -110,7 +77,10 @@ fn save_config(config: &Config) -> Result<(), String> {
     std::fs::write(config_path(), content).map_err(|e| format!("Failed to save config: {}", e))
 }
 
-fn fetch_available_models() -> Result<Vec<AvailableModel>, String> {
+// ===== Model Management =====
+
+/// Fetch available models from HuggingFace
+pub fn fetch_available_models() -> Result<Vec<AvailableModel>, String> {
     let url = format!("https://huggingface.co/api/models/{}/tree/main", HF_REPO);
     let client = Client::builder()
         .timeout(std::time::Duration::from_secs(30))
@@ -149,7 +119,8 @@ fn fetch_available_models() -> Result<Vec<AvailableModel>, String> {
         .collect())
 }
 
-fn list_models(config: &Config) -> Result<(), String> {
+/// List available models and print to stdout
+pub fn list_models(config: &Config) -> Result<(), String> {
     eprintln!("Fetching available models...");
     let models = fetch_available_models()?;
 
@@ -172,7 +143,8 @@ fn list_models(config: &Config) -> Result<(), String> {
     Ok(())
 }
 
-fn validate_model_exists(model_name: &str) -> Result<(), String> {
+/// Validate that a model exists on HuggingFace
+pub fn validate_model_exists(model_name: &str) -> Result<(), String> {
     let models = fetch_available_models()?;
     if models.iter().any(|m| m.name == model_name) {
         Ok(())
@@ -186,7 +158,8 @@ fn validate_model_exists(model_name: &str) -> Result<(), String> {
     }
 }
 
-fn download_model(model_name: &str) -> Result<PathBuf, String> {
+/// Download a model from HuggingFace
+pub fn download_model(model_name: &str) -> Result<PathBuf, String> {
     let url = format!(
         "https://huggingface.co/{}/resolve/main/{}.gguf",
         HF_REPO, model_name
@@ -256,11 +229,13 @@ fn download_model(model_name: &str) -> Result<PathBuf, String> {
     Ok(dest)
 }
 
-fn get_model_path(model_name: &str) -> PathBuf {
+/// Get the expected path for a model by name
+pub fn get_model_path(model_name: &str) -> PathBuf {
     config_dir().join(format!("{}.gguf", model_name))
 }
 
-fn find_or_download_model(model_name: &str, force_download: bool) -> Result<PathBuf, String> {
+/// Find or download a model by name
+pub fn find_or_download_model(model_name: &str, force_download: bool) -> Result<PathBuf, String> {
     let model_path = get_model_path(model_name);
 
     if model_path.exists() && !force_download {
@@ -278,7 +253,8 @@ fn find_or_download_model(model_name: &str, force_download: bool) -> Result<Path
     download_model(model_name)
 }
 
-fn find_model_path(
+/// Find the model path to use, either from override, or configured default
+pub fn find_model_path(
     override_path: Option<PathBuf>,
     config: &Config,
     force_update: bool,
@@ -295,7 +271,10 @@ fn find_model_path(
     find_or_download_model(&config.default_model, force_update)
 }
 
-fn detect_shell() -> String {
+// ===== Shell Detection =====
+
+/// Detect the current shell from environment variables
+pub fn detect_shell() -> String {
     // Unix: check SHELL env var
     if let Ok(shell_path) = env::var("SHELL") {
         if let Some(name) = shell_path.rsplit('/').next() {
@@ -317,7 +296,10 @@ fn detect_shell() -> String {
     "bash".to_string()
 }
 
-fn build_prompt(shell: &str, command: &str, _error: Option<&str>) -> String {
+// ===== Prompt Building =====
+
+/// Build a ChatML-formatted prompt for the model
+pub fn build_prompt(shell: &str, command: &str, _error: Option<&str>) -> String {
     // Match the exact format used in training data
     format!(
         "<|im_start|>system\n\
@@ -329,15 +311,20 @@ fn build_prompt(shell: &str, command: &str, _error: Option<&str>) -> String {
     )
 }
 
-fn suppress_llama_logs() {
+// ===== Logging =====
+
+/// Suppress llama.cpp log output
+pub fn suppress_llama_logs() {
     unsafe {
         llama_cpp_sys_2::ggml_log_set(None, std::ptr::null_mut());
         llama_cpp_sys_2::llama_log_set(None, std::ptr::null_mut());
     }
 }
 
+// ===== stderr Redirect =====
+
 #[cfg(unix)]
-mod stderr_redirect {
+pub mod stderr_redirect {
     use std::fs::File;
     use std::os::unix::io::AsRawFd;
 
@@ -361,12 +348,12 @@ mod stderr_redirect {
 }
 
 #[cfg(windows)]
-mod stderr_redirect {
+pub mod stderr_redirect {
     use std::fs::OpenOptions;
     use std::os::windows::io::AsRawHandle;
 
     pub struct SavedStderr {
-        saved_fd: i32,
+        pub saved_fd: i32,
     }
 
     extern "C" {
@@ -415,224 +402,10 @@ mod stderr_redirect {
     }
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let args = Args::parse();
-    let mut config = load_config();
+// ===== Linux Dependency Detection =====
 
-    // Handle management commands (no command required)
-    if args.list_models {
-        list_models(&config)?;
-        return Ok(());
-    }
-
-    if args.show_config {
-        let model_path = get_model_path(&config.default_model);
-        println!("Configuration:");
-        println!("  Default model: {}", config.default_model);
-        println!("  Config path: {}", config_path().display());
-        if model_path.exists() {
-            println!("  Model path: {}", model_path.display());
-        } else {
-            println!("  Model path: (not downloaded)");
-        }
-        return Ok(());
-    }
-
-    if let Some(ref model_name) = args.use_model {
-        eprintln!("Checking model availability...");
-        validate_model_exists(model_name)?;
-
-        // Download the model
-        download_model(model_name)?;
-
-        // Update config
-        config.default_model = model_name.clone();
-        save_config(&config)?;
-
-        eprintln!("✓ Default model set to: {}", model_name);
-        return Ok(());
-    }
-
-    // For inference, command is required
-    if args.command.is_empty() {
-        eprintln!("Usage: fix <command>");
-        eprintln!("       fix --list-models");
-        eprintln!("       fix --use-model <name>");
-        eprintln!("       fix --show-config");
-        std::process::exit(1);
-    }
-
-    // Join command arguments into single string
-    let command = args.command.join(" ");
-
-    // Detect shell
-    let shell = args.shell.unwrap_or_else(detect_shell);
-
-    if args.verbose {
-        eprintln!("Shell: {}", shell);
-    }
-
-    // Find or download model
-    let model_path = find_model_path(args.model, &config, args.update)?;
-
-    // Suppress logs (cross-platform)
-    if !args.verbose {
-        suppress_llama_logs();
-    }
-
-    #[cfg(unix)]
-    let saved_stderr = if !args.verbose {
-        stderr_redirect::redirect()
-    } else {
-        None
-    };
-
-    #[cfg(windows)]
-    let saved_stderr = if !args.verbose {
-        stderr_redirect::redirect()
-    } else {
-        None
-    };
-
-    // Initialize backend
-    let backend = LlamaBackend::init()?;
-
-    // Load model with GPU acceleration
-    let model_params = LlamaModelParams::default().with_n_gpu_layers(args.gpu_layers);
-    let model = LlamaModel::load_from_file(&backend, &model_path, &model_params)
-        .map_err(|e| format!("Failed to load model: {}", e))?;
-
-    // Create context
-    let ctx_params = LlamaContextParams::default()
-        .with_n_ctx(std::num::NonZeroU32::new(512))
-        .with_n_batch(512);
-    let mut ctx = model
-        .new_context(&backend, ctx_params)
-        .map_err(|e| format!("Failed to create context: {}", e))?;
-
-    // Build and tokenize prompt
-    let prompt = build_prompt(&shell, &command, args.error.as_deref());
-
-    if args.verbose {
-        eprintln!("Prompt length: {} chars", prompt.len());
-    }
-
-    let tokens = model
-        .str_to_token(&prompt, llama_cpp_2::model::AddBos::Always)
-        .map_err(|e| format!("Tokenization failed: {}", e))?;
-
-    // Create batch and add tokens
-    let mut batch = LlamaBatch::new(512, 1);
-    for (i, token) in tokens.iter().enumerate() {
-        let is_last = i == tokens.len() - 1;
-        batch.add(*token, i as i32, &[0], is_last)?;
-    }
-
-    // Decode prompt
-    ctx.decode(&mut batch)
-        .map_err(|e| format!("Decode failed: {}", e))?;
-
-    // Generate response
-    let mut output = String::new();
-    let max_tokens = 128; // Increased to allow for thinking tokens
-    let eos_token = model.token_eos();
-    let mut cur_pos = tokens.len() as i32;
-    let mut in_thinking = false;
-    let mut after_thinking = false;
-    let mut should_break = false;
-
-    for _ in 0..max_tokens {
-        let candidates = ctx.candidates();
-        let mut candidates_data = LlamaTokenDataArray::from_iter(candidates, false);
-
-        // Sample token (greedy)
-        let new_token = candidates_data.sample_token_greedy();
-
-        // Check for EOS or special tokens
-        if new_token == eos_token {
-            break;
-        }
-
-        // Convert token to string
-        if let Ok(piece) = model.token_to_str(new_token, llama_cpp_2::model::Special::Tokenize) {
-            // Stop at special tokens
-            if piece.contains("<|im_end|>") || piece.contains("<|im_start|>") {
-                break;
-            }
-
-            // Track thinking state
-            if piece.contains("<think>") {
-                in_thinking = true;
-            } else if piece.contains("</think>") {
-                in_thinking = false;
-                after_thinking = true;
-                // Don't add closing tag to output
-            } else if !in_thinking {
-                // Skip leading whitespace/newlines after thinking block
-                if after_thinking && piece.trim().is_empty() {
-                    // Just skip adding to output, but continue with batch update
-                } else {
-                    after_thinking = false;
-                    output.push_str(&piece);
-
-                    // Stop at newline (we only want one line) - but only if we have actual content
-                    let trimmed = output.trim();
-                    if !trimmed.is_empty() && trimmed.contains('\n') {
-                        should_break = true;
-                    }
-                }
-            }
-        }
-
-        if should_break {
-            break;
-        }
-
-        // Prepare next batch with correct position
-        batch.clear();
-        batch.add(new_token, cur_pos, &[0], true)?;
-        cur_pos += 1;
-        ctx.decode(&mut batch)
-            .map_err(|e| format!("Decode failed: {}", e))?;
-    }
-
-    // Clean and print result (to stdout, which is not redirected)
-    let result = output.trim();
-
-    // Strip common model artifacts/prefixes
-    let result = result
-        .strip_prefix("command >")
-        .or_else(|| result.strip_prefix("command>"))
-        .or_else(|| result.strip_prefix("command 2>&1"))
-        .or_else(|| result.strip_prefix("Command:"))
-        .unwrap_or(result)
-        .trim();
-
-    // Take only the first line (ignore any garbage after newline)
-    let result = result.lines().next().unwrap_or(result).trim();
-
-    #[cfg(unix)]
-    if let Some(saved) = saved_stderr {
-        stderr_redirect::restore(saved);
-    }
-
-    #[cfg(windows)]
-    if let Some(saved) = saved_stderr {
-        stderr_redirect::restore(saved);
-    }
-
-    if !result.is_empty() {
-        println!("{}", result);
-        Ok(())
-    } else {
-        eprintln!("Could not correct command");
-        std::process::exit(1);
-    }
-}
-
-// Linux dependency detection for users building from source with OpenMP
 #[cfg(target_os = "linux")]
-fn check_library_exists(lib_name: &str) -> bool {
+pub fn check_library_exists(lib_name: &str) -> bool {
     use std::process::Command;
 
     // Method 1: Try ldconfig
@@ -666,7 +439,7 @@ fn check_library_exists(lib_name: &str) -> bool {
 }
 
 #[cfg(target_os = "linux")]
-fn detect_package_manager_command() -> &'static str {
+pub fn detect_package_manager_command() -> &'static str {
     use std::path::Path;
 
     // Check /etc/os-release for distro identification
@@ -737,7 +510,7 @@ fn detect_package_manager_command() -> &'static str {
 
 #[cfg(target_os = "linux")]
 #[allow(dead_code)]
-fn check_linux_dependencies() {
+pub fn check_linux_dependencies() {
     if !check_library_exists("libgomp.so.1") {
         eprintln!("error: Missing required library: libgomp.so.1");
         eprintln!();
@@ -749,6 +522,8 @@ fn check_linux_dependencies() {
         std::process::exit(1);
     }
 }
+
+// ===== Tests =====
 
 #[cfg(test)]
 mod tests {
