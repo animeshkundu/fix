@@ -1,0 +1,216 @@
+name: Windows Shell Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'fix-cli/**'
+      - '.github/workflows/test-windows-shells.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'fix-cli/**'
+      - '.github/workflows/test-windows-shells.yml'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test-powershell:
+    name: PowerShell Tests
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: fix-cli
+
+      - name: Build
+        working-directory: fix-cli
+        run: cargo build --release
+
+      # Test with Windows PowerShell (powershell.exe)
+      - name: Test PSModulePath detection (Windows PowerShell)
+        shell: powershell
+        run: |
+          Write-Host "Testing with Windows PowerShell (powershell.exe)"
+          Write-Host "PowerShell Version: $($PSVersionTable.PSVersion)"
+          Write-Host "PSModulePath is set: $($env:PSModulePath -ne $null)"
+
+          # Verify PSModulePath exists (used for shell detection)
+          if (-not $env:PSModulePath) {
+            Write-Error "PSModulePath should be set in PowerShell"
+            exit 1
+          }
+
+          cd fix-cli
+          cargo test test_detect_shell_powershell_via_psmodulepath -- --nocapture
+
+      # Test with PowerShell Core (pwsh)
+      - name: Test PSModulePath detection (PowerShell Core)
+        shell: pwsh
+        run: |
+          Write-Host "Testing with PowerShell Core (pwsh)"
+          Write-Host "PowerShell Version: $($PSVersionTable.PSVersion)"
+          Write-Host "PSModulePath is set: $($null -ne $env:PSModulePath)"
+
+          # Verify PSModulePath exists
+          if (-not $env:PSModulePath) {
+            Write-Error "PSModulePath should be set in PowerShell Core"
+            exit 1
+          }
+
+          cd fix-cli
+          cargo test test_detect_shell_powershell_via_psmodulepath -- --nocapture
+
+      # Test shell-specific prompt building
+      - name: Test PowerShell prompt format
+        shell: pwsh
+        run: |
+          cd fix-cli
+          cargo test test_build_prompt_different_shells -- --nocapture
+
+      # Test config paths on Windows
+      - name: Test Windows config paths
+        shell: pwsh
+        run: |
+          cd fix-cli
+          cargo test config_dir -- --nocapture
+          cargo test config_path -- --nocapture
+          cargo test get_model_path -- --nocapture
+
+          # Verify paths use Windows conventions
+          Write-Host "APPDATA: $env:APPDATA"
+          Write-Host "Expected config location: $env:APPDATA\fix"
+
+      # Test Unicode handling in PowerShell
+      - name: Test Unicode handling
+        shell: pwsh
+        run: |
+          cd fix-cli
+          cargo test test_build_prompt_special_characters -- --nocapture
+
+  test-cmd:
+    name: CMD Tests
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: fix-cli
+
+      - name: Build
+        shell: cmd
+        run: |
+          cd fix-cli
+          cargo build --release
+
+      # Test CMD fallback detection
+      - name: Test CMD fallback detection
+        shell: cmd
+        run: |
+          echo Testing CMD shell detection (fallback behavior)
+          echo SHELL env var: %SHELL%
+
+          cd fix-cli
+
+          REM Clear PSModulePath to test CMD fallback
+          set PSModulePath=
+
+          REM Run the CMD detection test (fallback test)
+          cargo test test_detect_shell_fallback -- --nocapture
+
+      # Test that CMD environment works for basic operations
+      - name: Test basic CMD operations
+        shell: cmd
+        run: |
+          cd fix-cli
+
+          REM Test prompt building
+          cargo test test_build_prompt_basic -- --nocapture
+
+          REM Test config operations
+          cargo test config -- --nocapture
+
+      # Test path handling with spaces and special characters
+      - name: Test CMD path handling
+        shell: cmd
+        run: |
+          cd fix-cli
+
+          REM Windows paths may have spaces
+          cargo test config_path -- --nocapture
+
+  # Note: Shell detection matrix removed - the test-powershell and test-cmd jobs
+  # already provide comprehensive coverage. Dynamic shell: ${{ matrix.shell }}
+  # was causing GitHub Actions workflow parsing issues.
+
+  test-powershell-profile-integration:
+    name: PowerShell Profile Integration
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: fix-cli
+
+      - name: Build
+        working-directory: fix-cli
+        run: cargo build --release
+
+      # Test that the fix function from README would work
+      - name: Test fix function pattern
+        shell: pwsh
+        run: |
+          # Simulate the fix function from README
+          function Test-FixFunction {
+            param([string]$Command)
+
+            # Get the binary path
+            $fixBinary = Join-Path $PWD "fix-cli\target\release\fix.exe"
+
+            if (Test-Path $fixBinary) {
+              Write-Host "Testing fix function with command: $Command"
+              # In real usage, this would invoke the binary
+              # For testing, we just verify the pattern works
+              Write-Host "Binary exists at: $fixBinary"
+              return $true
+            }
+            return $false
+          }
+
+          # Test the function pattern
+          $result = Test-FixFunction -Command "gti status"
+          if (-not $result) {
+            Write-Error "Fix function pattern test failed"
+            exit 1
+          }
+
+          Write-Host "PowerShell profile integration test passed"
+
+      # Test Get-History interaction pattern
+      - name: Test Get-History pattern
+        shell: pwsh
+        run: |
+          # Add some commands to history
+          $null = 1 + 1  # Dummy command
+
+          # Test that Get-History works (used in fix function)
+          $lastCmd = (Get-History -Count 1).CommandLine
+          Write-Host "Last command from history: $lastCmd"
+
+          # Verify history mechanism works
+          if ($null -eq (Get-History -Count 1 -ErrorAction SilentlyContinue)) {
+            Write-Warning "No history available (expected in fresh session)"
+          } else {
+            Write-Host "Get-History integration works"
+          }

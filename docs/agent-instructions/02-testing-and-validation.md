@@ -91,9 +91,18 @@ cargo test          # Tests
 ```
 fix-cli/
 ├── src/
-│   └── main.rs         # Implementation
-└── tests/              # Integration tests (if needed)
-    └── cli_tests.rs
+│   └── main.rs         # Implementation with unit tests
+└── tests/              # Integration tests
+    ├── cli_test.rs     # Binary execution tests
+    ├── config_test.rs  # Cross-platform config tests
+    ├── wsl_test.rs     # WSL-specific tests
+    └── e2e_test.rs     # Model inference tests (requires model)
+```
+
+### Running E2E Tests
+```bash
+# E2E tests are ignored by default (require model download)
+cargo test --test e2e_test -- --ignored --test-threads=1
 ```
 
 For unit tests, place them in the same file:

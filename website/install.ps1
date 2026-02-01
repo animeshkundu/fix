@@ -8,7 +8,115 @@ $binary = "fix"
 
 function Write-Info { param($msg) Write-Host "==> " -ForegroundColor Blue -NoNewline; Write-Host $msg }
 function Write-Success { param($msg) Write-Host "==> " -ForegroundColor Green -NoNewline; Write-Host $msg }
+function Write-Warn { param($msg) Write-Host "warning: " -ForegroundColor Yellow -NoNewline; Write-Host $msg }
 function Write-Err { param($msg) Write-Host "error: " -ForegroundColor Red -NoNewline; Write-Host $msg }
+
+# Check if Rust is installed
+function Test-Rust {
+    try {
+        $null = & cargo --version 2>&1
+        $null = & rustc --version 2>&1
+        return $true
+    } catch {
+        return $false
+    }
+}
+
+# Install Rust via rustup
+function Install-Rust {
+    Write-Info "Installing Rust via rustup..."
+    try {
+        $rustupInit = "$env:TEMP\rustup-init.exe"
+        Invoke-WebRequest -Uri "https://win.rustup.rs/x86_64" -OutFile $rustupInit -UseBasicParsing
+        & $rustupInit -y --default-toolchain stable
+        Remove-Item $rustupInit -Force -ErrorAction SilentlyContinue
+
+        # Add cargo to current session PATH
+        $env:PATH = "$env:USERPROFILE\.cargo\bin;$env:PATH"
+
+        Write-Success "Rust installed successfully"
+        return $true
+    } catch {
+        Write-Err "Failed to install Rust: $_"
+        return $false
+    }
+}
+
+# Check for Visual Studio Build Tools
+function Test-BuildTools {
+    # Check for cl.exe in common locations
+    $vsWhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+    if (Test-Path $vsWhere) {
+        $installPath = & $vsWhere -latest -property installationPath 2>$null
+        if ($installPath) {
+            return $true
+        }
+    }
+    return $false
+}
+
+# Build from source
+function Build-FromSource {
+    Write-Info "Building $binary from source..."
+
+    # Check/install Rust
+    if (-not (Test-Rust)) {
+        if (-not (Install-Rust)) {
+            Write-Err "Could not install Rust. Please install manually from https://rustup.rs"
+            return $false
+        }
+    }
+
+    # Check for Visual Studio Build Tools
+    if (-not (Test-BuildTools)) {
+        Write-Warn "Visual Studio Build Tools not found."
+        Write-Host ""
+        Write-Host "To build from source on Windows, you need:"
+        Write-Host "  1. Visual Studio Build Tools (or full Visual Studio)"
+        Write-Host "     Download from: https://visualstudio.microsoft.com/visual-cpp-build-tools/"
+        Write-Host "     Select 'Desktop development with C++' workload"
+        Write-Host ""
+        Write-Host "  2. CMake (usually included with VS Build Tools)"
+        Write-Host ""
+        Write-Host "After installing, run this installer again."
+        return $false
+    }
+
+    Write-Info "Building with cargo (this may take several minutes)..."
+    try {
+        $env:PATH = "$env:USERPROFILE\.cargo\bin;$env:PATH"
+        & cargo install --git "https://github.com/$repo" fix
+
+        # Copy from cargo bin to install dir
+        $cargoBin = "$env:USERPROFILE\.cargo\bin\fix.exe"
+        if (Test-Path $cargoBin) {
+            if (-not (Test-Path $installDir)) {
+                New-Item -ItemType Directory -Path $installDir -Force | Out-Null
+            }
+            Copy-Item $cargoBin -Destination "$installDir\$binary.exe" -Force
+            Write-Success "Built and installed $binary to $installDir\$binary.exe"
+            return $true
+        }
+    } catch {
+        Write-Err "Build failed: $_"
+    }
+    return $false
+}
+
+# Offer to build from source
+function Invoke-BuildFromSource {
+    Write-Host ""
+    Write-Host "Would you like to build from source? [y/N]" -ForegroundColor Yellow
+    $response = Read-Host
+    if ($response -eq "y" -or $response -eq "Y") {
+        return Build-FromSource
+    } else {
+        Write-Host ""
+        Write-Host "You can build manually later with:"
+        Write-Host "  cargo install --git https://github.com/$repo fix"
+        return $false
+    }
+}
 
 # Detect architecture
 $arch = if ([Environment]::Is64BitOperatingSystem) { "x86_64" } else { "i686" }
@@ -31,36 +139,47 @@ try {
 $assetName = "$binary-$target.zip"
 $asset = $release.assets | Where-Object { $_.name -eq $assetName }
 
-if (-not $asset) {
-    Write-Err "No binary found for $target"
-    Write-Host "Available assets:"
-    $release.assets | ForEach-Object { Write-Host "  - $($_.name)" }
-    exit 1
-}
-
-$downloadUrl = $asset.browser_download_url
-Write-Info "Downloading from: $downloadUrl"
-
 # Create install directory
 $installDir = "$env:LOCALAPPDATA\$binary"
 if (-not (Test-Path $installDir)) {
     New-Item -ItemType Directory -Path $installDir -Force | Out-Null
 }
 
-# Download and extract
-$tempFile = "$env:TEMP\$assetName"
-try {
-    Invoke-WebRequest -Uri $downloadUrl -OutFile $tempFile -UseBasicParsing
-    Expand-Archive -Path $tempFile -DestinationPath $installDir -Force
-    Remove-Item $tempFile -Force
-} catch {
-    Write-Err "Download failed: $_"
+$exePath = "$installDir\$binary.exe"
+$binaryInstalled = $false
+
+if (-not $asset) {
+    Write-Warn "No pre-built binary found for $target"
+    if (Invoke-BuildFromSource) {
+        $binaryInstalled = $true
+    }
+} else {
+    $downloadUrl = $asset.browser_download_url
+    Write-Info "Downloading from: $downloadUrl"
+
+    # Download and extract
+    $tempFile = "$env:TEMP\$assetName"
+    try {
+        Invoke-WebRequest -Uri $downloadUrl -OutFile $tempFile -UseBasicParsing
+        Expand-Archive -Path $tempFile -DestinationPath $installDir -Force
+        Remove-Item $tempFile -Force
+        $binaryInstalled = $true
+    } catch {
+        Write-Warn "Download failed: $_"
+        Write-Host ""
+        if (Invoke-BuildFromSource) {
+            $binaryInstalled = $true
+        }
+    }
+}
+
+if (-not $binaryInstalled) {
+    Write-Err "Installation failed. Please try building from source manually."
     exit 1
 }
 
-$exePath = "$installDir\$binary.exe"
 if (-not (Test-Path $exePath)) {
-    Write-Err "Binary not found after extraction"
+    Write-Err "Binary not found at expected location: $exePath"
     exit 1
 }
 

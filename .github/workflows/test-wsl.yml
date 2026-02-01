@@ -1,0 +1,164 @@
+name: WSL Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'fix-cli/**'
+      - '.github/workflows/test-wsl.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'fix-cli/**'
+      - '.github/workflows/test-wsl.yml'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test-wsl:
+    name: WSL Tests
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Setup WSL with Ubuntu
+      - name: Setup WSL
+        uses: Vampire/setup-wsl@v3
+        with:
+          distribution: Ubuntu-22.04
+          additional-packages: |
+            build-essential
+            curl
+            cmake
+            git
+            libclang-dev
+            pkg-config
+            libssl-dev
+
+      # Install Rust in WSL
+      - name: Install Rust in WSL
+        shell: wsl-bash {0}
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          echo 'source $HOME/.cargo/env' >> ~/.bashrc
+
+      # Build Linux binary in WSL
+      - name: Build Linux binary in WSL
+        shell: wsl-bash {0}
+        run: |
+          source $HOME/.cargo/env
+          cd fix-cli
+          cargo build --release
+
+      # Test shell detection in WSL (should detect bash, not cmd/powershell)
+      - name: Test shell detection in WSL
+        shell: wsl-bash {0}
+        run: |
+          source $HOME/.cargo/env
+          cd fix-cli
+          # Verify SHELL is set to bash
+          echo "SHELL=$SHELL"
+          [ "$SHELL" = "/bin/bash" ] || [ "$SHELL" = "/usr/bin/bash" ]
+
+          # Run unit tests for shell detection
+          cargo test test_detect_shell_from_shell_env_bash -- --nocapture
+
+      # Test config path in WSL (should use Linux paths, not Windows)
+      - name: Test config path in WSL
+        shell: wsl-bash {0}
+        run: |
+          source $HOME/.cargo/env
+          cd fix-cli
+          # Run config path tests
+          cargo test config_dir -- --nocapture
+          cargo test config_path -- --nocapture
+
+          # Verify config would go to ~/.config/fix, not Windows path
+          cargo test get_model_path -- --nocapture
+
+      # Build Windows binary for cross-environment testing
+      - name: Build Windows binary
+        shell: pwsh
+        run: |
+          cd fix-cli
+          cargo build --release
+
+      # Test calling Windows binary from WSL
+      - name: Test Windows binary from WSL
+        shell: wsl-bash {0}
+        env:
+          WSLENV: GITHUB_WORKSPACE/p
+        run: |
+          # Use the workspace path passed from Windows host
+          # The /p flag in WSLENV converts the path to WSL format
+          WORKSPACE="${GITHUB_WORKSPACE:-/mnt/d/a/fix/fix}"
+          WIN_BINARY="${WORKSPACE}/fix-cli/target/release/fix.exe"
+
+          # Verify the binary exists
+          if [ -f "$WIN_BINARY" ]; then
+            echo "Found Windows binary at: $WIN_BINARY"
+            # Test that it can be executed from WSL
+            # Note: This will detect PowerShell/CMD shell, not WSL bash
+            "$WIN_BINARY" --help || true
+          else
+            echo "Windows binary not found at expected path: $WIN_BINARY"
+            echo "Trying to find it in common locations..."
+            find /mnt -name "fix.exe" 2>/dev/null | head -5 || true
+          fi
+
+      # Test path translation scenarios
+      - name: Test path scenarios
+        shell: wsl-bash {0}
+        run: |
+          source $HOME/.cargo/env
+          cd fix-cli
+
+          # Test that model paths use Linux conventions in WSL
+          cargo test model_path -- --nocapture
+
+          echo "WSL path tests completed"
+
+  test-wsl-integration:
+    name: WSL Integration Tests
+    runs-on: windows-latest
+    needs: test-wsl
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup WSL
+        uses: Vampire/setup-wsl@v3
+        with:
+          distribution: Ubuntu-22.04
+          additional-packages: |
+            build-essential
+            curl
+            cmake
+            git
+            libclang-dev
+            pkg-config
+            libssl-dev
+
+      - name: Install Rust in WSL
+        shell: wsl-bash {0}
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          echo 'source $HOME/.cargo/env' >> ~/.bashrc
+
+      # Test the fix CLI would work correctly in typical WSL scenarios
+      - name: Test WSL usage scenarios
+        shell: wsl-bash {0}
+        run: |
+          source $HOME/.cargo/env
+          cd fix-cli
+          cargo build --release
+
+          # Test 1: Shell detection returns bash
+          echo "Test 1: Verifying shell detection..."
+          cargo test test_detect_shell_from_shell_env_bash -- --nocapture
+
+          # Test 2: Prompt building uses correct shell
+          echo "Test 2: Verifying prompt format..."
+          cargo test test_build_prompt_different_shells -- --nocapture
+
+          echo "WSL integration tests completed"

@@ -102,18 +102,32 @@ jobs:
             os: macos-14
             features: metal
             archive: tar.gz
+            cross: false
           - target: x86_64-apple-darwin
             os: macos-15
             features: metal
             archive: tar.gz
+            cross: false
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-20.04
             features: ""
             archive: tar.gz
+            cross: false
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-22.04
+            features: ""
+            archive: tar.gz
+            cross: true
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-22.04
+            features: ""
+            archive: tar.gz
+            cross: true
           - target: x86_64-pc-windows-msvc
             os: windows-latest
             features: ""
             archive: zip
+            cross: false
     defaults:
       run:
         working-directory: fix-cli
@@ -130,8 +144,20 @@ jobs:
         with:
           workspaces: fix-cli
 
-      - name: Build
+      - name: Install cross-compilation tools
+        if: matrix.cross
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+          cargo install cross --git https://github.com/cross-rs/cross
+
+      - name: Build (native)
+        if: ${{ !matrix.cross }}
         run: cargo build --release --target ${{ matrix.target }} ${{ matrix.features && format('--features {0}', matrix.features) || '' }}
+
+      - name: Build (cross-compile)
+        if: matrix.cross
+        run: cross build --release --target ${{ matrix.target }} ${{ matrix.features && format('--features {0}', matrix.features) || '' }}
 
       - name: Package (Unix)
         if: matrix.archive == 'tar.gz'

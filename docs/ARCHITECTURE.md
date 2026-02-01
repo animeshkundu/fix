@@ -52,14 +52,29 @@ fix is a native Rust CLI that corrects shell commands using local LLM inference.
 
 ```
 fix/
-├── fix-cli/              # Rust native CLI
-│   ├── src/main.rs              # CLI implementation
-│   ├── Cargo.toml               # Dependencies
-│   └── Cargo.lock               # Locked versions
+├── fix-cli/                      # Rust native CLI
+│   ├── src/main.rs               # CLI implementation
+│   ├── tests/                    # Integration tests
+│   │   ├── cli_test.rs           # Binary execution tests
+│   │   ├── config_test.rs        # Cross-platform config tests
+│   │   ├── wsl_test.rs           # WSL-specific tests
+│   │   └── e2e_test.rs           # Model inference tests
+│   ├── Cargo.toml                # Dependencies
+│   └── Cargo.lock                # Locked versions
+├── .github/workflows/            # CI/CD pipelines
+│   ├── ci.yml                    # Core CI (build, test, E2E)
+│   ├── release.yml               # Automated releases
+│   ├── test-wsl.yml              # WSL testing
+│   ├── test-windows-shells.yml   # PowerShell/CMD testing
+│   ├── test-install.yml          # Installation script testing
+│   └── test-distros.yml          # Linux distro testing
 ├── docs/                         # Documentation
-│   ├── ARCHITECTURE.md          # This file
-│   └── ADR/                     # Architecture Decision Records
-│       └── 004-rust-cli-implementation.md
+│   ├── ARCHITECTURE.md           # This file
+│   ├── testing-strategy.md       # Testing approach
+│   └── ADR/                      # Architecture Decision Records
+├── website/                      # GitHub Pages site
+│   ├── install.sh                # Unix installer
+│   └── install.ps1               # Windows installer
 ├── AGENTS.md                     # AI agent guidelines
 ├── README.md                     # User documentation
 └── .gitignore
@@ -222,13 +237,15 @@ docs/
 ├── ARCHITECTURE.md              # This file - system design
 ├── HANDOFF.md                   # Developer onboarding
 ├── HISTORY.md                   # Development timeline
+├── testing-strategy.md          # Testing approach
 ├── ADR/                         # Architecture Decision Records
 │   ├── 000-template.md          # ADR template
 │   ├── 001-gguf-model-format.md
 │   ├── 002-metal-gpu-acceleration.md
 │   ├── 003-cross-platform-support.md
 │   ├── 004-rust-cli-implementation.md
-│   └── 005-huggingface-model-distribution.md
+│   ├── 005-huggingface-model-distribution.md
+│   └── 006-cross-platform-testing-strategy.md
 ├── agent-instructions/          # AI agent protocols
 │   ├── 00-core-philosophy.md    # Docs = Code principle
 │   ├── 01-research-and-web.md   # Research requirements

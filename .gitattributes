@@ -1,0 +1,31 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Shell scripts must use LF (Unix line endings)
+*.sh text eol=lf
+
+# PowerShell scripts - also use LF for consistency
+*.ps1 text eol=lf
+
+# Batch files need CRLF on Windows
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Rust source files
+*.rs text eol=lf
+
+# YAML/TOML config files
+*.yml text eol=lf
+*.yaml text eol=lf
+*.toml text eol=lf
+
+# Markdown documentation
+*.md text eol=lf
+
+# Binary files - don't touch these
+*.gguf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
