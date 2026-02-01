@@ -55,6 +55,25 @@ jobs:
           workspaces: fix-cli
       - name: Build
         run: cargo build --release ${{ matrix.features && format('--features {0}', matrix.features) || '' }}
+      - name: Verify binaries exist (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          if [ -f target/release/fix ] && [ -f target/release/wit ]; then
+            echo "✓ Both fix and wit binaries built successfully"
+          else
+            echo "✗ Missing binaries"
+            exit 1
+          fi
+      - name: Verify binaries exist (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          if ((Test-Path target/release/fix.exe) -and (Test-Path target/release/wit.exe)) {
+            Write-Host "✓ Both fix and wit binaries built successfully"
+          } else {
+            Write-Host "✗ Missing binaries"
+            exit 1
+          }
 
   test:
     name: Test (${{ matrix.os }})
@@ -129,5 +148,15 @@ jobs:
             echo "E2E inference test PASSED"
           else
             echo "E2E inference test FAILED"
+            exit 1
+          fi
+
+      - name: Test wit binary exists
+        run: |
+          if [ -x ./target/release/wit ]; then
+            echo "wit binary exists and is executable"
+            ./target/release/wit --help | head -5
+          else
+            echo "wit binary missing or not executable"
             exit 1
           fi
