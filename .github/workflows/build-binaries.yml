@@ -89,7 +89,9 @@ jobs:
         run: |
           mkdir -p artifacts
           cp target/${{ matrix.target }}/release/fix artifacts/fix-${{ matrix.target }}
+          cp target/${{ matrix.target }}/release/wit artifacts/wit-${{ matrix.target }}
           chmod +x artifacts/fix-${{ matrix.target }}
+          chmod +x artifacts/wit-${{ matrix.target }}
 
       - name: Prepare binary (Windows)
         if: runner.os == 'Windows'
@@ -97,6 +99,7 @@ jobs:
         run: |
           New-Item -ItemType Directory -Path artifacts -Force | Out-Null
           Copy-Item target/${{ matrix.target }}/release/fix.exe artifacts/fix-${{ matrix.target }}.exe
+          Copy-Item target/${{ matrix.target }}/release/wit.exe artifacts/wit-${{ matrix.target }}.exe
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -115,7 +118,7 @@ jobs:
         run: |
           echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "All platform binaries built successfully:" >> $GITHUB_STEP_SUMMARY
+          echo "All platform binaries built successfully (fix + wit):" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "- aarch64-apple-darwin (macOS ARM64)" >> $GITHUB_STEP_SUMMARY
           echo "- x86_64-apple-darwin (macOS Intel)" >> $GITHUB_STEP_SUMMARY
