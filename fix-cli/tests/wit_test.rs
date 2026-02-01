@@ -59,10 +59,7 @@ fn test_wit_accepts_quiet_flag() {
         .expect("Failed to execute wit --quiet command");
 
     // Should not crash with --quiet flag
-    assert!(
-        output.status.success(),
-        "wit --quiet should exit cleanly"
-    );
+    assert!(output.status.success(), "wit --quiet should exit cleanly");
 
     let stderr = String::from_utf8_lossy(&output.stderr);
     // Verify it still produces output (just no spinners)
@@ -106,10 +103,7 @@ fn test_wit_quiet_and_verbose_together() {
         .expect("Failed to execute wit with --quiet --verbose flags");
 
     // Both flags should work together
-    assert!(
-        output.status.success(),
-        "wit should handle both flags"
-    );
+    assert!(output.status.success(), "wit should handle both flags");
 
     let stderr = String::from_utf8_lossy(&output.stderr);
     assert!(
@@ -152,10 +146,7 @@ fn test_wit_with_command() {
         .expect("Failed to execute wit with command argument");
 
     // Should exit cleanly (even if it's a placeholder)
-    assert!(
-        output.status.success(),
-        "wit should handle commands"
-    );
+    assert!(output.status.success(), "wit should handle commands");
 
     let stderr = String::from_utf8_lossy(&output.stderr);
     assert!(

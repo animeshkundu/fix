@@ -4,6 +4,8 @@
 //! including model management, shell detection, and prompt building.
 
 pub mod agent;
+pub mod cache;
+pub mod discovery;
 pub mod parser;
 pub mod progress;
 pub mod tools;
