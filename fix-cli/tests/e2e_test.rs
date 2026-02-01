@@ -282,12 +282,7 @@ fn test_e2e_output_is_clean_command_only() {
     }
 
     // Test multiple inputs to ensure output is always clean
-    let test_cases = vec![
-        "gti status",
-        "dcoker ps",
-        "nmp install",
-        "pytohn script.py",
-    ];
+    let test_cases = vec!["gti status", "dcoker ps", "nmp install", "pytohn script.py"];
 
     for input in test_cases {
         let output = Command::new(get_binary_path())
@@ -344,7 +339,10 @@ fn test_e2e_output_is_clean_command_only() {
             );
         }
 
-        eprintln!("Clean output check passed for '{}' -> '{}'", input, stdout_trimmed);
+        eprintln!(
+            "Clean output check passed for '{}' -> '{}'",
+            input, stdout_trimmed
+        );
     }
 }
 
@@ -368,11 +366,7 @@ fn test_e2e_shell_override() {
         let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
 
         // Should still produce a valid correction regardless of shell
-        assert!(
-            !stdout.is_empty(),
-            "Output for shell '{}' is empty",
-            shell
-        );
+        assert!(!stdout.is_empty(), "Output for shell '{}' is empty", shell);
 
         // Output should be clean
         assert!(
