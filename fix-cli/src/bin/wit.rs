@@ -33,9 +33,8 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 #[cfg(unix)]
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
 #[cfg(unix)]
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 /// Idle timeout before daemon auto-shuts down (1 hour)
 #[cfg(unix)]
