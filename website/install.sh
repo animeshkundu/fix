@@ -1,11 +1,13 @@
 #!/bin/bash
-# fix installer
+# fix/wit installer
 # Usage: curl -fsSL https://animeshkundu.github.io/fix/install.sh | sh
+# Usage: curl -fsSL https://animeshkundu.github.io/fix/install.sh | sh -s wit
 
 set -e
 
 REPO="animeshkundu/fix"
-BINARY="fix"
+# Default to 'fix', but allow override via first argument
+BINARY="${1:-fix}"
 INSTALL_DIR="${HOME}/.local/bin"
 
 # Colors (if terminal supports it)
@@ -153,11 +155,11 @@ build_from_source() {
     features="--features metal"
   fi
 
-  if cargo install --git "https://github.com/${REPO}" fix $features; then
+  if cargo install --git "https://github.com/${REPO}" ${BINARY} $features; then
     # cargo installs to ~/.cargo/bin, create symlink to our install dir
-    if [ -f "$HOME/.cargo/bin/fix" ]; then
+    if [ -f "$HOME/.cargo/bin/${BINARY}" ]; then
       mkdir -p "$INSTALL_DIR"
-      cp "$HOME/.cargo/bin/fix" "${INSTALL_DIR}/${BINARY}"
+      cp "$HOME/.cargo/bin/${BINARY}" "${INSTALL_DIR}/${BINARY}"
       chmod +x "${INSTALL_DIR}/${BINARY}"
       success "Built and installed ${BINARY} to ${INSTALL_DIR}/${BINARY}"
       return 0
@@ -314,7 +316,7 @@ main() {
       else
         echo ""
         echo "You can also build manually:"
-        echo "  cargo install --git https://github.com/${REPO} fix"
+        echo "  cargo install --git https://github.com/${REPO} ${BINARY}"
         exit 1
       fi
     fi
@@ -361,45 +363,59 @@ main() {
   # Verify installation with test command
   info "Testing installation..."
   local test_output
-  test_output=$("${INSTALL_DIR}/${BINARY}" "gti status" 2>&1) || true
-
-  if [ "$test_output" = "git status" ]; then
-    success "Test passed! 'gti status' → 'git status'"
+  
+  if [ "$BINARY" = "wit" ]; then
+    # wit is a placeholder - just check it runs and shows help
+    test_output=$("${INSTALL_DIR}/${BINARY}" --show-config 2>&1) || true
+    if echo "$test_output" | grep -q "Configuration:"; then
+      success "Test passed! ${BINARY} --show-config works"
+    else
+      warn "Test produced unexpected output: ${test_output}"
+    fi
   else
-    warn "Test produced unexpected output: ${test_output}"
+    # fix: test command correction
+    test_output=$("${INSTALL_DIR}/${BINARY}" "gti status" 2>&1) || true
 
-    if is_wsl; then
-      info "WSL detected. Trying Windows binary instead..."
-      if download_windows_binary; then
-        # Re-test with Windows binary
-        test_output=$("${INSTALL_DIR}/${BINARY}.exe" "gti status" 2>&1) || true
-        if [ "$test_output" = "git status" ]; then
-          success "Windows binary works! Using fix.exe on WSL."
-          rm -f "${INSTALL_DIR}/${BINARY}"  # Remove Linux binary
+    if [ "$test_output" = "git status" ]; then
+      success "Test passed! 'gti status' → 'git status'"
+    else
+      warn "Test produced unexpected output: ${test_output}"
+
+      if is_wsl; then
+        info "WSL detected. Trying Windows binary instead..."
+        if download_windows_binary; then
+          # Re-test with Windows binary
+          test_output=$("${INSTALL_DIR}/${BINARY}.exe" "gti status" 2>&1) || true
+          if [ "$test_output" = "git status" ]; then
+            success "Windows binary works! Using fix.exe on WSL."
+            rm -f "${INSTALL_DIR}/${BINARY}"  # Remove Linux binary
+          else
+            warn "Windows binary also failed."
+            echo ""
+            echo "Debug with: ${BINARY}.exe --verbose gti status"
+          fi
         else
-          warn "Windows binary also failed."
-          echo ""
-          echo "Debug with: ${BINARY}.exe --verbose gti status"
+          warn "Linux binary failed (likely GLIBC version) and Windows fallback unavailable."
+          offer_build_from_source "$os"
         fi
       else
-        warn "Linux binary failed (likely GLIBC version) and Windows fallback unavailable."
+        # Native Linux - binary failed
+        echo ""
+        echo "The pre-built binary doesn't work on your system."
+        if has_nvidia_gpu; then
+          echo "NVIDIA GPU detected. Ensure drivers are installed:"
+          echo "  Ubuntu/Debian: sudo apt install nvidia-driver-535"
+          echo "  Fedora: sudo dnf install akmod-nvidia"
+        fi
         offer_build_from_source "$os"
       fi
-    else
-      # Native Linux - binary failed
-      echo ""
-      echo "The pre-built binary doesn't work on your system."
-      if has_nvidia_gpu; then
-        echo "NVIDIA GPU detected. Ensure drivers are installed:"
-        echo "  Ubuntu/Debian: sudo apt install nvidia-driver-535"
-        echo "  Fedora: sudo dnf install akmod-nvidia"
-      fi
-      offer_build_from_source "$os"
     fi
   fi
 
-  # Configure shell integration
-  configure_shell_integration
+  # Configure shell integration (only for 'fix' binary)
+  if [ "$BINARY" = "fix" ]; then
+    configure_shell_integration
+  fi
 
   success "Installation complete!"
   echo ""
@@ -429,7 +445,7 @@ offer_build_from_source() {
   else
     echo ""
     echo "You can build manually later with:"
-    echo "  cargo install --git https://github.com/${REPO} fix"
+    echo "  cargo install --git https://github.com/${REPO} ${BINARY}"
   fi
 }
 
