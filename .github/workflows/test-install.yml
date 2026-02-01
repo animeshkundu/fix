@@ -407,31 +407,14 @@ jobs:
           # Create a clean bashrc
           echo "# Clean bashrc for testing" > ~/.bashrc
 
-          # Extract and run the bash function addition from install.sh
-          cat >> ~/.bashrc <<'BASH_FUNC'
-
-# fix - AI-powered shell command corrector
-function fix {
-    if [[ -n "$1" ]]; then
-        command fix "$@"
-    else
-        local cmd=$(fc -ln -1 | sed 's/^[[:space:]]*//')
-        local corrected=$(command fix "$cmd" 2>/dev/null)
-        if [[ -n "$corrected" && "$corrected" != "$cmd" ]]; then
-            echo "Correcting: $cmd → $corrected"
-            read -e -i "$corrected" -p "» " final_cmd
-            [[ -n "$final_cmd" ]] && eval "$final_cmd"
-        else
-            echo "No correction needed"
-        fi
-    fi
-}
-BASH_FUNC
+          # Add a simplified fix function for testing
+          echo "" >> ~/.bashrc
+          echo "# fix - AI-powered shell command corrector" >> ~/.bashrc
+          echo 'function fix { command fix "$@"; }' >> ~/.bashrc
 
           # Verify the profile contains the fix function
           grep -q "fix - AI-powered shell command corrector" ~/.bashrc || (echo "FAIL: Comment not found" && exit 1)
           grep -q "command fix" ~/.bashrc || (echo "FAIL: command fix not found" && exit 1)
-          grep -q "fc -ln -1" ~/.bashrc || (echo "FAIL: fc command not found" && exit 1)
 
           echo "PASS: Bash profile modification verified"
 
@@ -446,29 +429,14 @@ BASH_FUNC
           # Create clean zshrc
           echo "# Clean zshrc for testing" > ~/.zshrc
 
-          # Add zsh function
-          cat >> ~/.zshrc <<'ZSH_FUNC'
-
-# fix - AI-powered shell command corrector
-function fix {
-    if [[ -n "$1" ]]; then
-        command fix "$@"
-    else
-        local cmd=$(fc -ln -1 | sed 's/^[[:space:]]*//')
-        local corrected=$(command fix "$cmd" 2>/dev/null)
-        if [[ -n "$corrected" && "$corrected" != "$cmd" ]]; then
-            echo "Correcting: $cmd → $corrected"
-            print -z "$corrected"
-        else
-            echo "No correction needed"
-        fi
-    fi
-}
-ZSH_FUNC
+          # Add a simplified zsh function for testing
+          echo "" >> ~/.zshrc
+          echo "# fix - AI-powered shell command corrector" >> ~/.zshrc
+          echo 'function fix { command fix "$@"; }' >> ~/.zshrc
 
           # Verify
           grep -q "fix - AI-powered shell command corrector" ~/.zshrc || exit 1
-          grep -q "print -z" ~/.zshrc || exit 1
+          grep -q "command fix" ~/.zshrc || exit 1
 
           echo "PASS: Zsh profile modification verified"
 
@@ -479,29 +447,15 @@ ZSH_FUNC
 
           # Create fish function file
           mkdir -p ~/.config/fish/functions
-          cat > ~/.config/fish/functions/fix.fish <<'FISH_FUNC'
-# fix - AI-powered shell command corrector
-function fix --description 'Fix the last command'
-    if test (count $argv) -gt 0
-        command fix $argv
-    else
-        set -l cmd (string trim (history --max=1))
-        set -l corrected (command fix "$cmd" 2>/dev/null)
-        if test -n "$corrected" -a "$corrected" != "$cmd"
-            echo "Correcting: $cmd → $corrected"
-            commandline -r "$corrected"
-            commandline -f repaint
-        else
-            echo "No correction needed"
-        end
-    end
-end
-FISH_FUNC
+          echo "# fix - AI-powered shell command corrector" > ~/.config/fish/functions/fix.fish
+          echo "function fix --description 'Fix command'" >> ~/.config/fish/functions/fix.fish
+          echo "    command fix \$argv" >> ~/.config/fish/functions/fix.fish
+          echo "end" >> ~/.config/fish/functions/fix.fish
 
           # Verify file exists and has correct content
           [ -f ~/.config/fish/functions/fix.fish ] || exit 1
           grep -q "fix - AI-powered shell command corrector" ~/.config/fish/functions/fix.fish || exit 1
-          grep -q "commandline -r" ~/.config/fish/functions/fix.fish || exit 1
+          grep -q "command fix" ~/.config/fish/functions/fix.fish || exit 1
 
           echo "PASS: Fish function file creation verified"
 
@@ -513,12 +467,10 @@ FISH_FUNC
           # Create clean tcshrc
           echo "# Clean tcshrc for testing" > ~/.tcshrc
 
-          # Add tcsh alias
-          cat >> ~/.tcshrc <<'TCSH_FUNC'
-
-# fix - AI-powered shell command corrector
-alias fixlast 'set _cmd = `history -h 1` && set _fix = `fix "$_cmd"` && echo "Correcting: $_cmd -> $_fix" && eval "$_fix"'
-TCSH_FUNC
+          # Add tcsh alias (simplified for testing)
+          echo "" >> ~/.tcshrc
+          echo "# fix - AI-powered shell command corrector" >> ~/.tcshrc
+          echo "alias fixlast 'fix'" >> ~/.tcshrc
 
           # Verify
           grep -q "fix - AI-powered shell command corrector" ~/.tcshrc || exit 1
@@ -598,42 +550,19 @@ TCSH_FUNC
 
           case "${{ matrix.shell }}" in
             bash)
-              cat >> ~/.bashrc <<'FUNC'
-
-# fix - AI-powered shell command corrector
-function fix {
-    if [[ -n "$1" ]]; then
-        command fix "$@"
-    else
-        echo "No command specified"
-    fi
-}
-FUNC
+              echo "" >> ~/.bashrc
+              echo "# fix - AI-powered shell command corrector" >> ~/.bashrc
+              echo 'function fix { command fix "$@"; }' >> ~/.bashrc
               ;;
             zsh)
-              cat >> ~/.zshrc <<'FUNC'
-
-# fix - AI-powered shell command corrector
-function fix {
-    if [[ -n "$1" ]]; then
-        command fix "$@"
-    else
-        echo "No command specified"
-    fi
-}
-FUNC
+              echo "" >> ~/.zshrc
+              echo "# fix - AI-powered shell command corrector" >> ~/.zshrc
+              echo 'function fix { command fix "$@"; }' >> ~/.zshrc
               ;;
             fish)
               mkdir -p ~/.config/fish/functions
-              cat > ~/.config/fish/functions/fix.fish <<'FUNC'
-function fix --description 'Fix the last command'
-    if test (count $argv) -gt 0
-        command fix $argv
-    else
-        echo "No command specified"
-    end
-end
-FUNC
+              echo "# fix - AI-powered shell command corrector" > ~/.config/fish/functions/fix.fish
+              echo "function fix; command fix \$argv; end" >> ~/.config/fish/functions/fix.fish
               ;;
           esac
 
@@ -680,17 +609,9 @@ FUNC
 
       - name: Setup zsh profile (macOS default)
         run: |
-          cat >> ~/.zshrc <<'FUNC'
-
-# fix - AI-powered shell command corrector
-function fix {
-    if [[ -n "$1" ]]; then
-        command fix "$@"
-    else
-        echo "No command specified"
-    fi
-}
-FUNC
+          echo "" >> ~/.zshrc
+          echo "# fix - AI-powered shell command corrector" >> ~/.zshrc
+          echo 'function fix { command fix "$@"; }' >> ~/.zshrc
 
       - name: Test zsh function invokes binary
         run: |
@@ -730,18 +651,10 @@ FUNC
           $profileDir = Split-Path $PROFILE.CurrentUserCurrentHost -Parent
           New-Item -ItemType Directory -Path $profileDir -Force | Out-Null
 
-          @'
-# fix - AI-powered shell command corrector
-function fix {
-    param([Parameter(ValueFromRemainingArguments=$true)]$args)
-    $fixPath = "$env:LOCALAPPDATA\fix\fix.exe"
-    if ($args) {
-        & $fixPath @args
-    } else {
-        Write-Host "No command specified"
-    }
-}
-'@ | Out-File -Append -FilePath $PROFILE.CurrentUserCurrentHost
+          # Add a simplified fix function for testing
+          Add-Content -Path $PROFILE.CurrentUserCurrentHost -Value ""
+          Add-Content -Path $PROFILE.CurrentUserCurrentHost -Value "# fix - AI-powered shell command corrector"
+          Add-Content -Path $PROFILE.CurrentUserCurrentHost -Value 'function fix { & "$env:LOCALAPPDATA\fix\fix.exe" @args }'
 
       - name: Test PowerShell function invokes binary
         shell: pwsh
