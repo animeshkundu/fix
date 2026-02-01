@@ -326,7 +326,7 @@ jobs:
         run: |
           # Test a simple bash function to verify syntax
           bash -c '
-          fix() {
+          function fix {
               if [[ -n "$1" ]]; then
                   echo "direct: $@"
               else
@@ -347,7 +347,7 @@ jobs:
 
           # Test zsh function
           zsh -c '
-          fix() {
+          function fix {
               if [[ -n "$1" ]]; then
                   echo "direct: $@"
               else
@@ -411,7 +411,7 @@ jobs:
           cat >> ~/.bashrc <<'BASH_FUNC'
 
 # fix - AI-powered shell command corrector
-fix() {
+function fix {
     if [[ -n "$1" ]]; then
         command fix "$@"
     else
@@ -450,7 +450,7 @@ BASH_FUNC
           cat >> ~/.zshrc <<'ZSH_FUNC'
 
 # fix - AI-powered shell command corrector
-fix() {
+function fix {
     if [[ -n "$1" ]]; then
         command fix "$@"
     else
@@ -601,7 +601,7 @@ TCSH_FUNC
               cat >> ~/.bashrc <<'FUNC'
 
 # fix - AI-powered shell command corrector
-fix() {
+function fix {
     if [[ -n "$1" ]]; then
         command fix "$@"
     else
@@ -614,7 +614,7 @@ FUNC
               cat >> ~/.zshrc <<'FUNC'
 
 # fix - AI-powered shell command corrector
-fix() {
+function fix {
     if [[ -n "$1" ]]; then
         command fix "$@"
     else
@@ -683,7 +683,7 @@ FUNC
           cat >> ~/.zshrc <<'FUNC'
 
 # fix - AI-powered shell command corrector
-fix() {
+function fix {
     if [[ -n "$1" ]]; then
         command fix "$@"
     else
