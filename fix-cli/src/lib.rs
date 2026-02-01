@@ -26,6 +26,9 @@ pub const HF_REPO: &str = "animeshkundu/cmd-correct";
 /// Default model name used when no model is specified
 pub const DEFAULT_MODEL: &str = "qwen3-correct-0.6B";
 
+/// Default model for wit (agentic) CLI - larger model for complex corrections
+pub const WIT_DEFAULT_MODEL: &str = "qwen3-wit-1.7B";
+
 // ===== Configuration =====
 
 /// Persistent configuration for the fix CLI

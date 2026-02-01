@@ -13,7 +13,9 @@ No API keys. No internet required. Sub-100ms on Apple Silicon.
 
 ## Quick Install
 
-### fix (fast command correction)
+The installer downloads both `wit` and `fix` binaries. By default, `wit` is primary (with shell integration).
+
+### Default (wit as primary)
 
 **macOS / Linux:**
 
@@ -27,21 +29,21 @@ curl -fsSL https://animeshkundu.github.io/fix/install.sh | sh
 iwr -useb https://animeshkundu.github.io/fix/install.ps1 | iex
 ```
 
-### wit (smart correction with agentic capabilities - preview)
+### Alternative (fix as primary)
+
+To install with `fix` as primary instead:
 
 **macOS / Linux:**
 
 ```bash
-curl -fsSL https://animeshkundu.github.io/fix/install.sh | sh -s wit
+curl -fsSL https://animeshkundu.github.io/fix/install.sh | sh -s fix
 ```
 
 **Windows (PowerShell):**
 
 ```powershell
-iwr -useb https://animeshkundu.github.io/fix/install.ps1 | iex -args wit
+iwr -useb https://animeshkundu.github.io/fix/install.ps1 | iex -args fix
 ```
-
-**Note:** `wit` is currently a preview/placeholder. Full agentic implementation coming soon.
 
 ## Features
 
@@ -54,7 +56,26 @@ iwr -useb https://animeshkundu.github.io/fix/install.ps1 | iex -args wit
 
 ## Usage
 
+### wit - Smart Command Correction
+
+`wit` uses tool-assisted inference to correct commands it doesn't recognize immediately.
+
+```bash
+# Basic correction
+wit "gti status"
+# → git status
+
+# More complex corrections (uses tools to discover commands)
+wit "kubctl get pods"
+# → kubectl get pods
+
+# With verbose output to see tool calls
+wit --verbose "dockr ps"
+```
+
 ### fix - Fast Command Correction
+
+`fix` provides instant corrections for common typos without tool lookups.
 
 ```bash
 # Basic correction
@@ -66,16 +87,6 @@ fix -e "command not found: gti" "gti status"
 
 # Specify shell explicitly
 fix -s fish "gut push"
-```
-
-### wit - Smart Correction (Preview)
-
-```bash
-# Check configuration
-wit --show-config
-
-# Future: Context-aware corrections with agentic capabilities
-# (Full implementation coming in future releases)
 ```
 
 ### Model Management
