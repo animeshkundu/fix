@@ -4,8 +4,8 @@
 //! spinners and status messages during operations that take >100ms.
 
 use indicatif::{ProgressBar, ProgressStyle};
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 /// A progress spinner that can be shown or hidden based on operation duration
@@ -48,7 +48,7 @@ impl ProgressSpinner {
             pb.set_style(
                 ProgressStyle::default_spinner()
                     .template("{spinner:.cyan} {msg}")
-                    .unwrap()
+                    .unwrap(),
             );
             pb.enable_steady_tick(Duration::from_millis(100));
             self.pb = Some(pb);
