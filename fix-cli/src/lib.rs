@@ -3,6 +3,7 @@
 //! This library provides common functionality for shell command correction,
 //! including model management, shell detection, and prompt building.
 
+pub mod progress;
 pub mod tools;
 
 use indicatif::{ProgressBar, ProgressStyle};

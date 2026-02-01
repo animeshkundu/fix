@@ -7,7 +7,7 @@
 //! Full implementation will be added in subsequent PRs.
 
 use clap::Parser;
-use fix_lib::{config_path, detect_shell, get_model_path, load_config};
+use fix_lib::{config_path, detect_shell, get_model_path, load_config, progress::ProgressSpinner};
 
 #[derive(Parser, Debug)]
 #[command(name = "wit")]
@@ -24,6 +24,10 @@ struct Args {
     /// Show verbose output
     #[arg(short, long)]
     verbose: bool,
+
+    /// Disable progress indicators
+    #[arg(short, long)]
+    quiet: bool,
 
     /// Show current configuration
     #[arg(long)]
@@ -64,9 +68,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         eprintln!("Command: {}", command);
     }
 
+    // Create progress spinner
+    let mut spinner = ProgressSpinner::new(args.quiet);
+
+    // Simulate agentic workflow with progress indicators
+    spinner.set_message("Discovering tools...");
+    std::thread::sleep(std::time::Duration::from_millis(50));
+
+    spinner.set_message("Checking command...");
+    std::thread::sleep(std::time::Duration::from_millis(50));
+
+    spinner.set_message("Analyzing...");
+    std::thread::sleep(std::time::Duration::from_millis(50));
+
+    spinner.set_message("Correcting...");
+    std::thread::sleep(std::time::Duration::from_millis(50));
+
+    spinner.finish_with_message("✓");
+
     // Placeholder: In future PRs, this will implement:
     // - Agentic loop with tool execution
-    // - Progress indicators
     // - Context-aware corrections
     eprintln!("wit: Smart command correction not yet implemented.");
     eprintln!("Received command: {}", command);
