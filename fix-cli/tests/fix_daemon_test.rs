@@ -138,9 +138,9 @@ fn test_fix_direct_bypasses_daemon() {
     let status_stderr = String::from_utf8_lossy(&status_output.stderr);
     let combined = format!("{}{}", status_stdout, status_stderr);
 
-    // Direct mode should not start a daemon
+    // Direct mode should not start a daemon (on Windows, daemon is not supported)
     assert!(
-        combined.contains("not running"),
+        combined.contains("not running") || combined.contains("not supported"),
         "Direct mode should not start daemon. stdout: '{}', stderr: '{}'",
         status_stdout,
         status_stderr
@@ -177,8 +177,9 @@ fn test_fix_daemon_status_after_stop() {
     let stderr = String::from_utf8_lossy(&status_output.stderr);
     let combined = format!("{}{}", stdout, stderr);
 
+    // On Windows, daemon mode is not supported
     assert!(
-        combined.contains("not running"),
+        combined.contains("not running") || combined.contains("not supported"),
         "After stop, daemon should not be running. stdout: '{}', stderr: '{}'",
         stdout,
         stderr
@@ -330,8 +331,9 @@ fn test_fix_status_when_no_daemon() {
     let stderr = String::from_utf8_lossy(&output.stderr);
     let combined = format!("{}{}", stdout, stderr);
 
+    // On Windows, daemon mode is not supported
     assert!(
-        combined.contains("not running"),
+        combined.contains("not running") || combined.contains("not supported"),
         "Should indicate daemon is not running. stdout: '{}', stderr: '{}'",
         stdout,
         stderr
