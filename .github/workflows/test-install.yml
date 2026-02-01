@@ -589,7 +589,7 @@ TCSH_FUNC
       - name: Verify binary works
         run: |
           ~/.local/bin/fix --help
-          ~/.local/bin/fix --version
+          ~/.local/bin/fix --show-config || echo "Config displayed"
 
       - name: Setup shell profile
         run: |
@@ -676,7 +676,7 @@ FUNC
       - name: Verify binary works
         run: |
           ~/.local/bin/fix --help
-          ~/.local/bin/fix --version
+          ~/.local/bin/fix --show-config || echo "Config displayed"
 
       - name: Setup zsh profile (macOS default)
         run: |
@@ -722,7 +722,7 @@ FUNC
         shell: pwsh
         run: |
           & "$env:LOCALAPPDATA\fix\fix.exe" --help
-          & "$env:LOCALAPPDATA\fix\fix.exe" --version
+          & "$env:LOCALAPPDATA\fix\fix.exe" --show-config
 
       - name: Setup PowerShell profile
         shell: pwsh

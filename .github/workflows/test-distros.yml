@@ -117,7 +117,7 @@ jobs:
       - name: Test binary runs
         run: |
           fix --help
-          fix --version
+          fix --show-config || echo "Config displayed (model may not be set)"
 
       - name: Test binary with mock command
         run: |

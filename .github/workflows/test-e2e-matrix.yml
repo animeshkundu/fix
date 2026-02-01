@@ -162,7 +162,7 @@ jobs:
           cp binary-download/fix-${{ matrix.target }} fix-cli/target/release/fix
           chmod +x fix-cli/target/release/fix
           echo "Binary ready at fix-cli/target/release/fix"
-          fix-cli/target/release/fix --version
+          fix-cli/target/release/fix --help | head -5
 
       - name: Setup binary (Windows)
         if: runner.os == 'Windows'
@@ -171,7 +171,7 @@ jobs:
           New-Item -ItemType Directory -Path fix-cli/target/release -Force | Out-Null
           Copy-Item binary-download/fix-${{ matrix.target }}.exe fix-cli/target/release/fix.exe
           Write-Host "Binary ready at fix-cli/target/release/fix.exe"
-          & fix-cli/target/release/fix.exe --version
+          & fix-cli/target/release/fix.exe --help | Select-Object -First 5
 
       # Run E2E tests (these require building the test harness, but not the binary)
       - name: Run E2E tests (Unix)
