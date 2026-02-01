@@ -405,6 +405,10 @@ impl ToolExecutor {
 
         // Wait with timeout
         let timeout_remaining = self.timeout.saturating_sub(start.elapsed());
+        if timeout_remaining.is_zero() {
+            let _ = child.kill();
+            return Err("Command timed out".to_string());
+        }
 
         match child.wait_timeout(timeout_remaining) {
             Ok(Some(status)) => {
@@ -579,7 +583,7 @@ impl WaitTimeoutExt for std::process::Child {
         timeout: Duration,
     ) -> Result<Option<std::process::ExitStatus>, std::io::Error> {
         let start = Instant::now();
-        let poll_interval = Duration::from_millis(10);
+        let poll_interval = Duration::from_millis(50);
 
         loop {
             match self.try_wait()? {
@@ -823,11 +827,11 @@ mod tests {
         // This should work on any platform since it's pure Rust
         let result = executor.scan_path_for_prefix("a");
 
-        // There should be at least some commands starting with 'a'
-        // (like 'alias', 'apt', 'awk', etc. on Unix, or 'attrib' on Windows)
-        if let Ok(output) = result {
-            // Just verify we got some output
-            assert!(!output.is_empty() || output.is_empty()); // Always passes, just checking it runs
+        // Just verify the function executes without panic
+        // Output depends on system PATH, so we only check for success or expected error
+        match result {
+            Ok(_) => {} // Any output is acceptable
+            Err(e) => assert!(e.contains("No commands found"), "Unexpected error: {}", e),
         }
     }
 
