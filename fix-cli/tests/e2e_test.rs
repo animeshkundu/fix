@@ -43,10 +43,7 @@ fn model_exists() -> bool {
 /// Run inference and return None if it fails (for CI resilience)
 /// This allows tests to skip gracefully when inference is flaky on CI
 fn try_run_inference(args: &[&str]) -> Option<String> {
-    let output = Command::new(get_binary_path())
-        .args(args)
-        .output()
-        .ok()?;
+    let output = Command::new(get_binary_path()).args(args).output().ok()?;
 
     if !output.status.success() {
         eprintln!("Inference failed with non-zero exit, skipping test assertions");

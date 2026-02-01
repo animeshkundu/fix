@@ -791,6 +791,7 @@ mod tests {
         assert!(result.output.contains("ls") || result.output.contains("/bin"));
     }
 
+    #[cfg(unix)]
     #[test]
     fn test_which_binary_nonexistent() {
         let executor = ToolExecutor::new(Shell::Bash);
