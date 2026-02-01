@@ -13,32 +13,7 @@ env:
   PACKAGE_NAME: fix
 
 jobs:
-  # Update Homebrew tap
-  homebrew:
-    name: Update Homebrew Tap
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Get release info
-        id: release
-        run: |
-          VERSION="${{ github.event.release.tag_name || github.event.inputs.version }}"
-          echo "version=${VERSION#v}" >> $GITHUB_OUTPUT
-          echo "tag=$VERSION" >> $GITHUB_OUTPUT
-
-      - name: Update Homebrew tap
-        uses: mislav/bump-homebrew-formula-action@v3
-        with:
-          formula-name: fix
-          homebrew-tap: animeshkundu/homebrew-fix
-          tag-name: ${{ steps.release.outputs.tag }}
-          download-url: https://github.com/animeshkundu/fix/releases/download/${{ steps.release.outputs.tag }}/fix-x86_64-apple-darwin.tar.gz
-        env:
-          COMMITTER_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-        continue-on-error: true  # Don't fail release if Homebrew update fails
-
-  # Submit to winget
+  # Submit to winget (microsoft/winget-pkgs - official repo)
   winget:
     name: Submit to winget
     runs-on: windows-latest
@@ -62,60 +37,7 @@ jobs:
           token: ${{ secrets.WINGET_TOKEN }}
         continue-on-error: true  # Don't fail release if winget submission fails
 
-  # Update Scoop bucket
-  scoop:
-    name: Update Scoop Bucket
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Get release info
-        id: release
-        run: |
-          VERSION="${{ github.event.release.tag_name || github.event.inputs.version }}"
-          echo "version=${VERSION#v}" >> $GITHUB_OUTPUT
-          echo "tag=$VERSION" >> $GITHUB_OUTPUT
-
-      - name: Download release artifact for hash
-        run: |
-          curl -sLO "https://github.com/animeshkundu/fix/releases/download/${{ steps.release.outputs.tag }}/fix-x86_64-pc-windows-msvc.zip"
-          SHA256=$(sha256sum fix-x86_64-pc-windows-msvc.zip | cut -d' ' -f1)
-          echo "sha256=$SHA256" >> $GITHUB_OUTPUT
-        id: hash
-
-      - name: Update Scoop manifest
-        run: |
-          cat > fix.json << EOF
-          {
-            "version": "${{ steps.release.outputs.version }}",
-            "description": "AI-powered shell command corrector using local LLM",
-            "homepage": "https://github.com/animeshkundu/fix",
-            "license": "MIT",
-            "url": "https://github.com/animeshkundu/fix/releases/download/${{ steps.release.outputs.tag }}/fix-x86_64-pc-windows-msvc.zip",
-            "hash": "${{ steps.hash.outputs.sha256 }}",
-            "bin": "fix.exe",
-            "checkver": "github",
-            "autoupdate": {
-              "url": "https://github.com/animeshkundu/fix/releases/download/v\$version/fix-x86_64-pc-windows-msvc.zip"
-            }
-          }
-          EOF
-          cat fix.json
-
-      - name: Push to Scoop bucket
-        uses: dmnemec/copy_file_to_another_repo_action@main
-        env:
-          API_TOKEN_GITHUB: ${{ secrets.SCOOP_BUCKET_TOKEN }}
-        with:
-          source_file: 'fix.json'
-          destination_repo: 'animeshkundu/scoop-fix'
-          destination_folder: 'bucket'
-          user_email: 'github-actions[bot]@users.noreply.github.com'
-          user_name: 'github-actions[bot]'
-          commit_message: 'Update fix to ${{ steps.release.outputs.version }}'
-        continue-on-error: true
-
-  # Publish to Chocolatey
+  # Publish to Chocolatey (direct push to chocolatey.org)
   chocolatey:
     name: Publish to Chocolatey
     runs-on: windows-latest
@@ -194,7 +116,7 @@ jobs:
   summary:
     name: Package Publishing Summary
     runs-on: ubuntu-latest
-    needs: [homebrew, winget, scoop, chocolatey]
+    needs: [winget, chocolatey]
     if: always()
     steps:
       - name: Report status
@@ -203,9 +125,11 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Package Manager | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|-----------------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Homebrew | ${{ needs.homebrew.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| winget | ${{ needs.winget.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Scoop | ${{ needs.scoop.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Chocolatey | ${{ needs.chocolatey.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Secrets Required" >> $GITHUB_STEP_SUMMARY
+          echo "- \`WINGET_TOKEN\`: GitHub PAT with public_repo scope" >> $GITHUB_STEP_SUMMARY
+          echo "- \`CHOCOLATEY_API_KEY\`: From chocolatey.org account" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Note: Package managers may take time to process submissions." >> $GITHUB_STEP_SUMMARY

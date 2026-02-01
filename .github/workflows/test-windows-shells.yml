@@ -147,36 +147,9 @@ jobs:
           REM Windows paths may have spaces
           cargo test config_path -- --nocapture
 
-  test-shell-detection-matrix:
-    name: Shell Detection Matrix
-    runs-on: windows-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        shell: [pwsh, powershell, cmd]
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: dtolnay/rust-toolchain@stable
-
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: fix-cli
-
-      - name: Build
-        working-directory: fix-cli
-        run: cargo build --release
-
-      - name: Test shell detection (${{ matrix.shell }})
-        shell: ${{ matrix.shell }}
-        run: |
-          cd fix-cli
-          cargo test detect_shell -- --nocapture
-
-      - name: Test all unit tests (${{ matrix.shell }})
-        shell: ${{ matrix.shell }}
-        working-directory: fix-cli
-        run: cargo test
+  # Note: Shell detection matrix removed - the test-powershell and test-cmd jobs
+  # already provide comprehensive coverage. Dynamic shell: ${{ matrix.shell }}
+  # was causing GitHub Actions workflow parsing issues.
 
   test-powershell-profile-integration:
     name: PowerShell Profile Integration
