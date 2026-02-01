@@ -66,6 +66,18 @@ fix --update "gti status"
 
 ## Installation
 
+### Package Managers
+
+**Windows:**
+
+```powershell
+# winget (Windows Package Manager)
+winget install animeshkundu.fix
+
+# Chocolatey
+choco install fix-cli
+```
+
 ### Pre-built Binaries
 
 Download from [GitHub Releases](https://github.com/animeshkundu/fix/releases):
@@ -75,6 +87,7 @@ Download from [GitHub Releases](https://github.com/animeshkundu/fix/releases):
 | macOS Apple Silicon | `fix-aarch64-apple-darwin.tar.gz` |
 | macOS Intel | `fix-x86_64-apple-darwin.tar.gz` |
 | Linux x64 | `fix-x86_64-unknown-linux-gnu.tar.gz` |
+| Linux ARM64 | `fix-aarch64-unknown-linux-gnu.tar.gz` |
 | Windows x64 | `fix-x86_64-pc-windows-msvc.zip` |
 
 ### Build from Source
