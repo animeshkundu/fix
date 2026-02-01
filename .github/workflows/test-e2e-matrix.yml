@@ -160,9 +160,13 @@ jobs:
         run: |
           mkdir -p fix-cli/target/release
           cp binary-download/fix-${{ matrix.target }} fix-cli/target/release/fix
+          cp binary-download/wit-${{ matrix.target }} fix-cli/target/release/wit
           chmod +x fix-cli/target/release/fix
+          chmod +x fix-cli/target/release/wit
           echo "Binary ready at fix-cli/target/release/fix"
           fix-cli/target/release/fix --help | head -5
+          echo "Binary ready at fix-cli/target/release/wit"
+          fix-cli/target/release/wit --help | head -5
 
       - name: Setup binary (Windows)
         if: runner.os == 'Windows'
@@ -170,8 +174,11 @@ jobs:
         run: |
           New-Item -ItemType Directory -Path fix-cli/target/release -Force | Out-Null
           Copy-Item binary-download/fix-${{ matrix.target }}.exe fix-cli/target/release/fix.exe
+          Copy-Item binary-download/wit-${{ matrix.target }}.exe fix-cli/target/release/wit.exe
           Write-Host "Binary ready at fix-cli/target/release/fix.exe"
           & fix-cli/target/release/fix.exe --help | Select-Object -First 5
+          Write-Host "Binary ready at fix-cli/target/release/wit.exe"
+          & fix-cli/target/release/wit.exe --help | Select-Object -First 5
 
       # Run E2E tests (these require building the test harness, but not the binary)
       - name: Run E2E tests (Unix)
@@ -267,3 +274,33 @@ jobs:
           fi
 
           echo "Additional tests completed"
+
+      # Test wit binary
+      - name: Test wit binary (Unix)
+        if: runner.os != 'Windows'
+        working-directory: fix-cli
+        run: |
+          echo "Testing wit binary..."
+          if [ -x ./target/release/wit ]; then
+            echo "wit binary exists and is executable"
+            ./target/release/wit --help | head -5
+            echo "PASS: wit binary is functional"
+          else
+            echo "FAIL: wit binary missing or not executable"
+            exit 1
+          fi
+
+      - name: Test wit binary (Windows)
+        if: runner.os == 'Windows'
+        working-directory: fix-cli
+        shell: pwsh
+        run: |
+          Write-Host "Testing wit binary..."
+          if (Test-Path ./target/release/wit.exe) {
+            Write-Host "wit binary exists"
+            & ./target/release/wit.exe --help | Select-Object -First 5
+            Write-Host "PASS: wit binary is functional"
+          } else {
+            Write-Host "FAIL: wit binary missing"
+            exit 1
+          }
