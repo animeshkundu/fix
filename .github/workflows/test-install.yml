@@ -593,7 +593,7 @@ jobs:
       - name: Test binary works directly
         run: |
           # Verify binary is callable and working
-          ~/.local/bin/fix --help | grep -q "AI-powered" || (echo "FAIL: binary not working" && exit 1)
+          ~/.local/bin/fix --help | grep -q "Fix shell command" || (echo "FAIL: binary not working" && exit 1)
           echo "PASS: Binary is functional"
 
   test-full-install-macos:
@@ -637,7 +637,7 @@ jobs:
       - name: Test binary works directly
         run: |
           # Verify binary is callable and working
-          ~/.local/bin/fix --help | grep -q "AI-powered" || (echo "FAIL: binary not working" && exit 1)
+          ~/.local/bin/fix --help | grep -q "Fix shell command" || (echo "FAIL: binary not working" && exit 1)
           echo "PASS: Binary is functional on macOS"
 
   test-full-install-windows:
@@ -683,7 +683,7 @@ jobs:
         run: |
           . $PROFILE.CurrentUserCurrentHost
           $output = fix --help
-          if ($output -match "AI-powered") {
+          if ($output -match "Fix shell command") {
             Write-Host "PASS: PowerShell function correctly invokes binary"
           } else {
             Write-Error "FAIL: Function output doesn't contain expected text"
@@ -798,7 +798,7 @@ jobs:
       - name: Verify binary works via CMD
         shell: cmd
         run: |
-          "%LOCALAPPDATA%\fix\fix.exe" --help | findstr /c:"AI-powered" >nul
+          "%LOCALAPPDATA%\fix\fix.exe" --help | findstr /c:"Fix shell command" >nul
           if %ERRORLEVEL% neq 0 (
             echo FAIL: fix binary not working correctly
             exit /b 1
