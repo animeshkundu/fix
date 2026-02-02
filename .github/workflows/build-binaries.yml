@@ -11,9 +11,8 @@ on:
         value: 'fix-binary'
   workflow_dispatch:
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
-  cancel-in-progress: true
+# Note: Concurrency is NOT set here because this is a reusable workflow.
+# The calling workflows handle their own concurrency control.
 
 env:
   CARGO_TERM_COLOR: always
