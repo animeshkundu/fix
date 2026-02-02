@@ -200,9 +200,10 @@ fn test_discover_tools_performance() {
     let _ = discover_tools();
     let elapsed = start.elapsed();
 
-    // Discovery should complete in reasonable time (< 60 seconds even on slow systems)
+    // Discovery should complete in reasonable time
+    // Increased to 120s for slow CI containers (e.g., Ubuntu 20.04 in Docker)
     assert!(
-        elapsed.as_secs() < 60,
+        elapsed.as_secs() < 120,
         "Discovery took too long: {:?}",
         elapsed
     );
