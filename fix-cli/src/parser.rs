@@ -21,9 +21,14 @@ pub enum ModelResponse {
 }
 
 /// Tool call structure for JSON deserialization
+/// Supports both "args" and "arguments" fields for backward compatibility
 #[derive(Debug, Clone, Deserialize, Serialize)]
 struct ToolCallJson {
     name: String,
+    /// Primary field used by training data
+    #[serde(default)]
+    arguments: HashMap<String, serde_json::Value>,
+    /// Fallback field for compatibility
     #[serde(default)]
     args: HashMap<String, serde_json::Value>,
 }
@@ -71,9 +76,15 @@ fn extract_tool_call(output: &str) -> Option<ModelResponse> {
     // Parse JSON
     let tool_call: ToolCallJson = serde_json::from_str(json_content).ok()?;
 
+    // Prefer "arguments" (training data format), fall back to "args"
+    let raw_args = if !tool_call.arguments.is_empty() {
+        tool_call.arguments
+    } else {
+        tool_call.args
+    };
+
     // Convert args to HashMap<String, String>
-    let args: HashMap<String, String> = tool_call
-        .args
+    let args: HashMap<String, String> = raw_args
         .into_iter()
         .map(|(k, v)| {
             let value_str = match v {
@@ -403,6 +414,75 @@ mod tests {
                 assert_eq!(name, "test");
             }
             _ => panic!("Expected ToolCall to take priority, got {:?}", result),
+        }
+    }
+
+    // ===== Training Data Format Tests =====
+
+    #[test]
+    fn test_parse_tool_call_with_arguments_field() {
+        // Training data uses "arguments" instead of "args"
+        let output =
+            r#"<tool_call>{"name": "which_binary", "arguments": {"command": "git"}}</tool_call>"#;
+        let result = parse_response(output);
+
+        match result {
+            ModelResponse::ToolCall { name, args } => {
+                assert_eq!(name, "which_binary");
+                assert_eq!(args.get("command"), Some(&"git".to_string()));
+            }
+            _ => panic!("Expected ToolCall, got {:?}", result),
+        }
+    }
+
+    #[test]
+    fn test_parse_tool_call_training_format_list_similar() {
+        // Exact format from training data
+        let output = r#"<tool_call>
+{"name": "list_similar_commands", "arguments": {"prefix": "ip"}}
+</tool_call>"#;
+        let result = parse_response(output);
+
+        match result {
+            ModelResponse::ToolCall { name, args } => {
+                assert_eq!(name, "list_similar_commands");
+                assert_eq!(args.get("prefix"), Some(&"ip".to_string()));
+            }
+            _ => panic!("Expected ToolCall, got {:?}", result),
+        }
+    }
+
+    #[test]
+    fn test_parse_tool_call_training_format_get_command_help() {
+        // Training data tool name
+        let output =
+            r#"<tool_call>{"name": "get_command_help", "arguments": {"command": "docker"}}</tool_call>"#;
+        let result = parse_response(output);
+
+        match result {
+            ModelResponse::ToolCall { name, args } => {
+                assert_eq!(name, "get_command_help");
+                assert_eq!(args.get("command"), Some(&"docker".to_string()));
+            }
+            _ => panic!("Expected ToolCall, got {:?}", result),
+        }
+    }
+
+    #[test]
+    fn test_parse_prefers_arguments_over_args() {
+        // If both fields present, "arguments" takes priority
+        let output = r#"<tool_call>{"name": "test", "arguments": {"a": "1"}, "args": {"b": "2"}}</tool_call>"#;
+        let result = parse_response(output);
+
+        match result {
+            ModelResponse::ToolCall { name, args } => {
+                assert_eq!(name, "test");
+                // Should use "arguments" field
+                assert_eq!(args.get("a"), Some(&"1".to_string()));
+                // "args" field should be ignored
+                assert_eq!(args.get("b"), None);
+            }
+            _ => panic!("Expected ToolCall, got {:?}", result),
         }
     }
 }
