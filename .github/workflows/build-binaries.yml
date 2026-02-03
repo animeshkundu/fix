@@ -11,6 +11,9 @@ on:
         value: 'fix-binary'
   workflow_dispatch:
 
+# Note: Concurrency is NOT set here because this is a reusable workflow.
+# The calling workflows handle their own concurrency control.
+
 env:
   CARGO_TERM_COLOR: always
 

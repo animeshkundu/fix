@@ -1,17 +1,17 @@
-//! fix Daemon Mode Tests
+//! wit Daemon Mode Tests
 //!
-//! Tests for the daemon mode functionality added to fix CLI.
+//! Tests for the daemon mode functionality added to wit CLI.
 //! These tests verify daemon control flags and behavior.
 
 use std::process::Command;
 use std::time::Duration;
 
-/// Get the path to the compiled fix binary
+/// Get the path to the compiled wit binary
 fn get_binary_path() -> String {
     let mut path = std::env::current_exe().unwrap();
     path.pop(); // Remove test binary name
     path.pop(); // Remove deps
-    path.push("fix");
+    path.push("wit");
 
     #[cfg(windows)]
     path.set_extension("exe");
@@ -19,7 +19,7 @@ fn get_binary_path() -> String {
     path.to_string_lossy().to_string()
 }
 
-/// Check if fix binary exists
+/// Check if wit binary exists
 fn binary_exists() -> bool {
     std::path::Path::new(&get_binary_path()).exists()
 }
@@ -27,16 +27,16 @@ fn binary_exists() -> bool {
 // ========== Daemon Control Flag Tests ==========
 
 #[test]
-fn test_fix_status_flag() {
+fn test_wit_status_flag() {
     if !binary_exists() {
-        eprintln!("fix binary not found, skipping test");
+        eprintln!("wit binary not found, skipping test");
         return;
     }
 
     let output = Command::new(get_binary_path())
         .arg("--status")
         .output()
-        .expect("Failed to execute fix binary");
+        .expect("Failed to execute wit binary");
 
     // Status should always succeed
     assert!(output.status.success(), "--status should succeed");
@@ -58,16 +58,16 @@ fn test_fix_status_flag() {
 }
 
 #[test]
-fn test_fix_stop_flag() {
+fn test_wit_stop_flag() {
     if !binary_exists() {
-        eprintln!("fix binary not found, skipping test");
+        eprintln!("wit binary not found, skipping test");
         return;
     }
 
     let output = Command::new(get_binary_path())
         .arg("--stop")
         .output()
-        .expect("Failed to execute fix binary");
+        .expect("Failed to execute wit binary");
 
     // Stop should succeed whether daemon is running or not
     assert!(output.status.success(), "--stop should succeed");
@@ -88,16 +88,16 @@ fn test_fix_stop_flag() {
 }
 
 #[test]
-fn test_fix_direct_flag() {
+fn test_wit_direct_flag() {
     if !binary_exists() {
-        eprintln!("fix binary not found, skipping test");
+        eprintln!("wit binary not found, skipping test");
         return;
     }
 
     let output = Command::new(get_binary_path())
         .args(["--direct", "gti status"])
         .output()
-        .expect("Failed to execute fix binary");
+        .expect("Failed to execute wit binary");
 
     // Direct mode bypasses daemon
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -113,9 +113,9 @@ fn test_fix_direct_flag() {
 }
 
 #[test]
-fn test_fix_direct_bypasses_daemon() {
+fn test_wit_direct_bypasses_daemon() {
     if !binary_exists() {
-        eprintln!("fix binary not found, skipping test");
+        eprintln!("wit binary not found, skipping test");
         return;
     }
 
@@ -126,7 +126,7 @@ fn test_fix_direct_bypasses_daemon() {
     let output = Command::new(get_binary_path())
         .args(["--direct", "gti status"])
         .output()
-        .expect("Failed to execute fix binary");
+        .expect("Failed to execute wit binary");
 
     // Check daemon is still not running after direct mode
     let status_output = Command::new(get_binary_path())
@@ -155,9 +155,9 @@ fn test_fix_direct_bypasses_daemon() {
 // ========== Daemon Lifecycle Tests ==========
 
 #[test]
-fn test_fix_daemon_status_after_stop() {
+fn test_wit_daemon_status_after_stop() {
     if !binary_exists() {
-        eprintln!("fix binary not found, skipping test");
+        eprintln!("wit binary not found, skipping test");
         return;
     }
 
@@ -193,16 +193,16 @@ fn test_fix_daemon_status_after_stop() {
 // ========== Combined Flag Tests ==========
 
 #[test]
-fn test_fix_verbose_direct() {
+fn test_wit_verbose_direct() {
     if !binary_exists() {
-        eprintln!("fix binary not found, skipping test");
+        eprintln!("wit binary not found, skipping test");
         return;
     }
 
     let output = Command::new(get_binary_path())
         .args(["--verbose", "--direct", "gti status"])
         .output()
-        .expect("Failed to execute fix binary");
+        .expect("Failed to execute wit binary");
 
     let stderr = String::from_utf8_lossy(&output.stderr);
 
@@ -212,16 +212,16 @@ fn test_fix_verbose_direct() {
 }
 
 #[test]
-fn test_fix_help_shows_daemon_flags() {
+fn test_wit_help_shows_daemon_flags() {
     if !binary_exists() {
-        eprintln!("fix binary not found, skipping test");
+        eprintln!("wit binary not found, skipping test");
         return;
     }
 
     let output = Command::new(get_binary_path())
         .arg("--help")
         .output()
-        .expect("Failed to execute fix binary");
+        .expect("Failed to execute wit binary");
 
     let stdout = String::from_utf8_lossy(&output.stdout);
 
@@ -246,9 +246,9 @@ fn test_fix_help_shows_daemon_flags() {
 // ========== Performance Tests ==========
 
 #[test]
-fn test_fix_status_is_fast() {
+fn test_wit_status_is_fast() {
     if !binary_exists() {
-        eprintln!("fix binary not found, skipping test");
+        eprintln!("wit binary not found, skipping test");
         return;
     }
 
@@ -258,7 +258,7 @@ fn test_fix_status_is_fast() {
     let _ = Command::new(get_binary_path())
         .arg("--status")
         .output()
-        .expect("Failed to execute fix binary");
+        .expect("Failed to execute wit binary");
     let duration = start.elapsed();
 
     // Status check should be instant (no model loading)
@@ -270,9 +270,9 @@ fn test_fix_status_is_fast() {
 }
 
 #[test]
-fn test_fix_stop_is_fast() {
+fn test_wit_stop_is_fast() {
     if !binary_exists() {
-        eprintln!("fix binary not found, skipping test");
+        eprintln!("wit binary not found, skipping test");
         return;
     }
 
@@ -282,7 +282,7 @@ fn test_fix_stop_is_fast() {
     let _ = Command::new(get_binary_path())
         .arg("--stop")
         .output()
-        .expect("Failed to execute fix binary");
+        .expect("Failed to execute wit binary");
     let duration = start.elapsed();
 
     // Stop should be quick
@@ -296,9 +296,9 @@ fn test_fix_stop_is_fast() {
 // ========== Error Handling Tests ==========
 
 #[test]
-fn test_fix_multiple_stops_ok() {
+fn test_wit_multiple_stops_ok() {
     if !binary_exists() {
-        eprintln!("fix binary not found, skipping test");
+        eprintln!("wit binary not found, skipping test");
         return;
     }
 
@@ -307,16 +307,16 @@ fn test_fix_multiple_stops_ok() {
         let output = Command::new(get_binary_path())
             .arg("--stop")
             .output()
-            .expect("Failed to execute fix binary");
+            .expect("Failed to execute wit binary");
 
         assert!(output.status.success(), "Multiple stops should all succeed");
     }
 }
 
 #[test]
-fn test_fix_status_when_no_daemon() {
+fn test_wit_status_when_no_daemon() {
     if !binary_exists() {
-        eprintln!("fix binary not found, skipping test");
+        eprintln!("wit binary not found, skipping test");
         return;
     }
 

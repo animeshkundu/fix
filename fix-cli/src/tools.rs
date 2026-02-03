@@ -257,8 +257,8 @@ impl ToolExecutor {
     fn execute_which_binary(&self, command: &str) -> ToolResult {
         let result = match self.shell {
             Shell::Bash | Shell::Zsh => {
-                // Use 'which' command
-                self.run_command_with_timeout("which", &[command])
+                // Use 'command -v' POSIX builtin (more portable than 'which')
+                self.run_bash_command(&format!("command -v {}", command))
             }
             Shell::Fish => {
                 // Fish: type -P for path only
@@ -791,6 +791,7 @@ mod tests {
         assert!(result.output.contains("ls") || result.output.contains("/bin"));
     }
 
+    #[cfg(unix)]
     #[test]
     fn test_which_binary_nonexistent() {
         let executor = ToolExecutor::new(Shell::Bash);
