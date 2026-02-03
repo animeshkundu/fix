@@ -107,6 +107,64 @@ Key design decisions:
 - Metal as primary GPU backend (see ADR-002)
 - Cross-platform architecture (see ADR-003)
 
+## February 2025
+
+### wit CLI True Agentic Loop Implementation (Feb 2025)
+
+Updated the wit CLI to implement a true agentic loop where the model controls tool selection:
+
+**Architecture Change:**
+- Previous: CLI decided when to call tools based on heuristics
+- New: Model outputs tool calls, CLI executes them, model sees results
+
+**Files Modified:**
+- `fix-cli/src/parser.rs` - Parse `<tool_call>` and `<answer>` tags from model output
+- `fix-cli/src/agent.rs` - Implement agentic loop with context building
+- `fix-cli/src/bin/wit.rs` - Wire up agentic loop with generate_fn callback
+
+**Key Components:**
+
+`parser.rs`:
+- `ModelResponse` enum: `ToolCall { name, args }` or `FinalAnswer(String)`
+- Parses `<tool_call>{"name": "...", "arguments": {...}}</tool_call>` format
+- Supports both `arguments` (training data) and `args` (legacy) fields
+- Handles `<answer>...</answer>` explicit answers
+- Falls back to raw text as final answer
+
+`agent.rs`:
+- `Context` struct: Builds ChatML prompts with conversation history
+- `agentic_correct()`: Main loop with MAX_ITERATIONS=3
+- `create_tool()`: Maps training data tool names to CLI Tool enum
+- Tool name mapping: `get_command_help` -> `HelpOutput`, `list_similar_commands` -> `ListSimilar`
+
+`wit.rs`:
+- `generate_response()`: Token-by-token generation with llama-cpp
+- `run_inference()`: Creates context, calls `agentic_correct()` with generate_fn
+- Handles `<think>` blocks by filtering them from output
+
+**Behavior:**
+1. User runs: `wit gti status`
+2. CLI builds context with system prompt + user input
+3. Model generates response (may include `<tool_call>`)
+4. If tool call: CLI executes tool, adds result to context, loops
+5. If final answer: CLI outputs corrected command
+6. Max 3 iterations to prevent infinite loops
+
+**Training Data Alignment:**
+- System prompt matches training format with `<tools>` definition block
+- User input format: `Shell: {shell}\nInput: {command}`
+- Tool call format: `<tool_call>{"name": "...", "arguments": {...}}</tool_call>`
+- Tool response format: `<tool_response>\n{output}\n</tool_response>`
+- Role tags: `system`, `user`, `assistant`, `tool`
+- ChatML tokens: `<|im_start|>` / `<|im_end|>`
+
+**Training Dataset:**
+- 8,511 multi-turn examples in ShareGPT format
+- 6 shells: bash, zsh, fish, powershell, cmd, wsl
+- 3 abstract tools: which_binary, get_command_help, list_similar_commands
+- Turn depth: 1-turn (30%), 2-turn (45%), 3-turn (25%)
+- Model: Qwen3-1.7B with LoRA (r=16, alpha=32)
+
 ## Model Timeline
 
 | Date | Model | Size | Notes |
