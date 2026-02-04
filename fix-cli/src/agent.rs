@@ -36,12 +36,32 @@ pub struct Context {
 }
 
 impl Context {
-    /// Create a new context with system prompt
+    /// Create a new context with system prompt matching training data format
     pub fn new(shell: Shell) -> Self {
         let system_prompt = format!(
-            "You are a shell command corrector for {}. \
-            You can use tools to help determine the correct command. \
-            When you have the answer, output only the corrected command.",
+            r#"You are a shell command assistant for {}. Your task is to correct malformed commands or generate commands from natural language descriptions.
+
+You have access to tools to discover what commands are available on the system. Use them when needed to verify command existence or learn command syntax.
+
+<tools>
+[
+  {{"name": "which_binary", "description": "Check if a command exists and get its path", "parameters": {{"command": {{"type": "string", "required": true}}}}}},
+  {{"name": "get_command_help", "description": "Get help/synopsis for a command", "parameters": {{"command": {{"type": "string", "required": true}}}}}},
+  {{"name": "list_similar_commands", "description": "Find commands with similar names", "parameters": {{"prefix": {{"type": "string", "required": true}}}}}}
+]
+</tools>
+
+Rules:
+1. If you're confident about the correction, output it directly without tool calls
+2. If unsure whether a command exists, use which_binary to check
+3. If you need syntax details, use get_command_help
+4. If a command seems misspelled, use list_similar_commands to find alternatives
+5. Output ONLY the corrected/generated command at the end - no explanations
+
+Tool call format:
+<tool_call>
+{{"name": "tool_name", "arguments": {{"param": "value"}}}}
+</tool_call>"#,
             shell
         );
 
@@ -54,11 +74,13 @@ impl Context {
         }
     }
 
-    /// Add the user's failed command
+    /// Add the user's failed command in training data format
     pub fn add_user(&mut self, command: &str) {
+        // Training data format: "Shell: {shell}\nInput: {command}"
+        let content = format!("Shell: {}\nInput: {}", self.shell, command);
         self.messages.push(Message {
             role: MessageRole::User,
-            content: command.to_string(),
+            content,
         });
     }
 
@@ -85,15 +107,16 @@ impl Context {
         });
     }
 
-    /// Add tool result
-    pub fn add_tool_result(&mut self, tool_name: &str, result: &ToolResult) {
+    /// Add tool result in training data format
+    /// Uses <tool_response>...</tool_response> format
+    pub fn add_tool_result(&mut self, _tool_name: &str, result: &ToolResult) {
+        // Format matches training data: <tool_response>\n...\n</tool_response>
         let content = if result.success {
-            format!("[{}]: {}", tool_name, result.output)
+            format!("<tool_response>\n{}\n</tool_response>", result.output)
         } else {
             format!(
-                "[{}] failed: {}",
-                tool_name,
-                result.error.as_deref().unwrap_or("Unknown error")
+                "<tool_response>\n{}\n</tool_response>",
+                result.error.as_deref().unwrap_or("")
             )
         };
 
@@ -104,15 +127,17 @@ impl Context {
     }
 
     /// Build a prompt string from the context
+    /// Uses ChatML format matching training data
     pub fn build_prompt(&self) -> String {
         let mut prompt = String::new();
 
         for msg in &self.messages {
+            // Training data uses "tool" for tool results, not "tool_result"
             let role_tag = match msg.role {
                 MessageRole::System => "system",
                 MessageRole::User => "user",
                 MessageRole::Assistant => "assistant",
-                MessageRole::ToolResult => "tool_result",
+                MessageRole::ToolResult => "tool",
             };
 
             prompt.push_str(&format!(
@@ -141,6 +166,18 @@ pub struct AgentResult {
     pub iterations: usize,
     /// Whether tools were used
     pub tools_used: bool,
+}
+
+/// Maximum characters for tool output to control prompt size
+const MAX_TOOL_OUTPUT_CHARS: usize = 200;
+
+/// Truncate tool output to stay within token budget
+fn truncate_output(output: &str) -> String {
+    if output.len() <= MAX_TOOL_OUTPUT_CHARS {
+        output.to_string()
+    } else {
+        format!("{}...", &output[..MAX_TOOL_OUTPUT_CHARS])
+    }
 }
 
 /// Execute the agentic correction loop
@@ -185,14 +222,17 @@ where
             ModelResponse::ToolCall { name, args } => {
                 tools_used = true;
 
+                // Add assistant's tool call to context
+                context.add_assistant(&response);
+
                 // Execute the tool
                 if let Some(tool) = create_tool(&name, &args) {
-                    let result = executor.execute(&tool);
-                    context.add_assistant(&response);
+                    let mut result = executor.execute(&tool);
+                    // Truncate output to control prompt size
+                    result.output = truncate_output(&result.output);
                     context.add_tool_result(&name, &result);
                 } else {
                     // Unknown tool - add error and continue
-                    context.add_assistant(&response);
                     context.add_tool_result(
                         &name,
                         &ToolResult::failure(format!("Unknown tool: {}", name)),
@@ -218,9 +258,11 @@ where
 }
 
 /// Create a Tool from name and arguments
+/// Maps training data tool names to CLI Tool enum
 fn create_tool(name: &str, args: &HashMap<String, String>) -> Option<Tool> {
     match name {
-        "help_output" => {
+        // Training data names (primary)
+        "get_command_help" | "help_output" => {
             let command = args.get("command")?;
             Some(Tool::HelpOutput {
                 command: command.clone(),
@@ -232,7 +274,8 @@ fn create_tool(name: &str, args: &HashMap<String, String>) -> Option<Tool> {
                 command: command.clone(),
             })
         }
-        "list_similar" => {
+        // Training data uses "list_similar_commands", CLI used "list_similar"
+        "list_similar_commands" | "list_similar" => {
             let prefix = args.get("prefix")?;
             Some(Tool::ListSimilar {
                 prefix: prefix.clone(),
@@ -282,7 +325,9 @@ mod tests {
 
         assert_eq!(ctx.messages.len(), 2);
         assert_eq!(ctx.messages[1].role, MessageRole::User);
-        assert_eq!(ctx.messages[1].content, "gti status");
+        // Training data format: "Shell: {shell}\nInput: {command}"
+        assert!(ctx.messages[1].content.contains("Shell: bash"));
+        assert!(ctx.messages[1].content.contains("Input: gti status"));
     }
 
     #[test]
@@ -321,7 +366,8 @@ mod tests {
         );
 
         assert_eq!(ctx.messages.len(), 3);
-        assert!(ctx.messages[2].content.contains("failed"));
+        // Uses <tool_response> format matching training data
+        assert!(ctx.messages[2].content.contains("<tool_response>"));
         assert!(ctx.messages[2].content.contains("not found"));
     }
 
@@ -400,6 +446,25 @@ mod tests {
     }
 
     #[test]
+    fn test_create_tool_training_data_names() {
+        // Test that training data tool names map correctly
+        let mut args = HashMap::new();
+
+        // "get_command_help" maps to HelpOutput
+        args.insert("command".to_string(), "git".to_string());
+        let tool = create_tool("get_command_help", &args);
+        assert!(tool.is_some());
+        assert_eq!(tool.unwrap().name(), "help_output");
+
+        // "list_similar_commands" maps to ListSimilar
+        args.clear();
+        args.insert("prefix".to_string(), "gi".to_string());
+        let tool = create_tool("list_similar_commands", &args);
+        assert!(tool.is_some());
+        assert_eq!(tool.unwrap().name(), "list_similar");
+    }
+
+    #[test]
     fn test_create_tool_missing_args() {
         let args = HashMap::new();
         let tool = create_tool("which_binary", &args);
@@ -438,8 +503,8 @@ mod tests {
         let result = agentic_correct("gti status", Shell::Bash, None, |_| {
             call_count += 1;
             if call_count == 1 {
-                // First call: request a tool
-                r#"<tool_call>{"name": "which_binary", "args": {"command": "git"}}</tool_call>"#
+                // First call: request a tool (using training data format with "arguments")
+                r#"<tool_call>{"name": "which_binary", "arguments": {"command": "git"}}</tool_call>"#
                     .to_string()
             } else {
                 // Second call: provide answer
@@ -454,9 +519,9 @@ mod tests {
 
     #[test]
     fn test_agentic_correct_max_iterations() {
-        // Simulate model that keeps requesting tools
+        // Simulate model that keeps requesting tools (using training data format)
         let result = agentic_correct("test", Shell::Bash, None, |_| {
-            r#"<tool_call>{"name": "which_binary", "args": {"command": "git"}}</tool_call>"#
+            r#"<tool_call>{"name": "which_binary", "arguments": {"command": "git"}}</tool_call>"#
                 .to_string()
         });
 

@@ -10,9 +10,10 @@ use clap::Parser;
 #[cfg(unix)]
 use fix_lib::stderr_redirect;
 use fix_lib::{
+    agent::{agentic_correct, AgentResult},
     cache, config_path, detect_shell, discovery, download_model, find_or_download_model,
     get_model_path, load_config, progress::ProgressSpinner, save_config, suppress_llama_logs,
-    tools::Shell, tools::Tool, tools::ToolExecutor, validate_model_exists, WIT_DEFAULT_MODEL,
+    tools::Shell, validate_model_exists, WIT_DEFAULT_MODEL,
 };
 use llama_cpp_2::context::params::LlamaContextParams;
 use llama_cpp_2::llama_backend::LlamaBackend;
@@ -242,190 +243,16 @@ fn send_to_daemon(request: &DaemonRequest) -> Result<DaemonResponse, String> {
     serde_json::from_str(&response_line).map_err(|e| format!("Failed to parse response: {}", e))
 }
 
-/// Analyze input command and determine which tools to run
-fn select_tools_for_input(input: &str, shell: Shell) -> Vec<Tool> {
-    let mut tools = Vec::new();
-    let words: Vec<&str> = input.split_whitespace().collect();
-
-    if words.is_empty() {
-        return tools;
-    }
-
-    let first_word = words[0];
-
-    // Always check if the first word might be a typo of a real command
-    tools.push(Tool::ListSimilar {
-        prefix: first_word.to_string(),
-    });
-
-    // Try to find the binary for common corrections
-    if first_word.len() >= 2 {
-        tools.push(Tool::WhichBinary {
-            command: first_word.to_string(),
-        });
-    }
-
-    // If the input looks like it might have a known command with typo
-    let common_commands = [
-        "git", "docker", "npm", "cargo", "python", "pip", "kubectl", "make",
-    ];
-    for cmd in common_commands {
-        if levenshtein_distance(first_word, cmd) <= 2 && first_word != cmd {
-            tools.push(Tool::WhichBinary {
-                command: cmd.to_string(),
-            });
-            tools.push(Tool::HelpOutput {
-                command: cmd.to_string(),
-            });
-            break;
-        }
-    }
-
-    // For Windows shells, add PowerShell-specific checks
-    if shell.is_windows_native()
-        && (first_word.starts_with("Get-") || first_word.starts_with("Set-"))
-    {
-        tools.push(Tool::HelpOutput {
-            command: first_word.to_string(),
-        });
-    }
-
-    tools
-}
-
-/// Simple Levenshtein distance for typo detection
-fn levenshtein_distance(a: &str, b: &str) -> usize {
-    let a_chars: Vec<char> = a.chars().collect();
-    let b_chars: Vec<char> = b.chars().collect();
-    let a_len = a_chars.len();
-    let b_len = b_chars.len();
-
-    if a_len == 0 {
-        return b_len;
-    }
-    if b_len == 0 {
-        return a_len;
-    }
-
-    let mut matrix = vec![vec![0usize; b_len + 1]; a_len + 1];
-
-    for (i, row) in matrix.iter_mut().enumerate().take(a_len + 1) {
-        row[0] = i;
-    }
-    #[allow(clippy::needless_range_loop)]
-    for j in 0..=b_len {
-        matrix[0][j] = j;
-    }
-
-    for i in 1..=a_len {
-        for j in 1..=b_len {
-            let cost = if a_chars[i - 1] == b_chars[j - 1] {
-                0
-            } else {
-                1
-            };
-            matrix[i][j] = std::cmp::min(
-                std::cmp::min(matrix[i - 1][j] + 1, matrix[i][j - 1] + 1),
-                matrix[i - 1][j - 1] + cost,
-            );
-        }
-    }
-
-    matrix[a_len][b_len]
-}
-
-/// Build wit prompt with tool results in the training format
-fn build_wit_prompt(shell: &str, input: &str, tool_results: &[(String, String)]) -> String {
-    let mut prompt = String::new();
-
-    prompt.push_str("<|im_start|>system\n");
-    prompt.push_str(&format!(
-        "You are a shell command assistant for {}. Use the provided tool results to generate the correct command. /no_think",
-        shell
-    ));
-    prompt.push_str("<|im_end|>\n");
-
-    prompt.push_str("<|im_start|>user\n");
-    prompt.push_str(&format!("Input: {}\n\n", input));
-
-    if !tool_results.is_empty() {
-        prompt.push_str("Tool results:\n");
-        for (tool_call, result) in tool_results {
-            prompt.push_str(&format!("- {}: {}\n", tool_call, result));
-        }
-    }
-    prompt.push_str("<|im_end|>\n");
-
-    prompt.push_str("<|im_start|>assistant\n");
-
-    prompt
-}
-
-/// Format tool call for display
-fn format_tool_call(tool: &Tool) -> String {
-    match tool {
-        Tool::WhichBinary { command } => format!("which_binary({})", command),
-        Tool::ListSimilar { prefix } => format!("list_similar({})", prefix),
-        Tool::HelpOutput { command } => format!("help_output({})", command),
-        Tool::GetEnvVar { name } => format!("get_env_var({})", name),
-        Tool::ManPage { command } => format!("man_page({})", command),
-    }
-}
-
-/// Run inference with loaded model
-fn run_inference(
+/// Generate a single response from the model given a prompt
+/// Used as the generate_fn for the agentic loop
+fn generate_response(
     model: &LlamaModel,
     backend: &LlamaBackend,
-    command: &str,
-    shell_str: &str,
-    verbose: bool,
+    prompt: &str,
 ) -> Result<String, String> {
-    let shell = Shell::parse(shell_str).unwrap_or(Shell::Bash);
-
-    // Execute tools in parallel
-    let tools_to_run = select_tools_for_input(command, shell);
-
-    // Parallel tool execution using thread::scope
-    let tool_results: Vec<(String, String)> = std::thread::scope(|s| {
-        // Spawn a thread for each tool
-        let handles: Vec<_> = tools_to_run
-            .iter()
-            .map(|tool| {
-                s.spawn(move || {
-                    let executor = ToolExecutor::new(shell);
-                    let result = executor.execute(tool);
-                    if result.success && !result.output.is_empty() {
-                        let tool_call = format_tool_call(tool);
-                        let output = if result.output.len() > 200 {
-                            format!("{}...", &result.output[..200])
-                        } else {
-                            result.output
-                        };
-                        Some((tool_call, output))
-                    } else {
-                        None
-                    }
-                })
-            })
-            .collect();
-
-        // Collect results, filtering out None values
-        handles
-            .into_iter()
-            .filter_map(|h| h.join().ok().flatten())
-            .collect()
-    });
-
-    if verbose {
-        eprintln!("Tool results (parallel): {:?}", tool_results);
-    }
-
-    // Build prompt
-    let prompt = build_wit_prompt(shell_str, command, &tool_results);
-
-    // Create context
+    // Create context with larger size for multi-turn
     let ctx_params = LlamaContextParams::default()
-        .with_n_ctx(std::num::NonZeroU32::new(1024))
+        .with_n_ctx(std::num::NonZeroU32::new(2048))
         .with_n_batch(512);
     let mut ctx = model
         .new_context(backend, ctx_params)
@@ -433,11 +260,11 @@ fn run_inference(
 
     // Tokenize
     let tokens = model
-        .str_to_token(&prompt, llama_cpp_2::model::AddBos::Always)
+        .str_to_token(prompt, llama_cpp_2::model::AddBos::Always)
         .map_err(|e| format!("Tokenization failed: {}", e))?;
 
     // Create batch
-    let mut batch = LlamaBatch::new(1024, 1);
+    let mut batch = LlamaBatch::new(2048, 1);
     for (i, token) in tokens.iter().enumerate() {
         let is_last = i == tokens.len() - 1;
         batch
@@ -467,10 +294,12 @@ fn run_inference(
         }
 
         if let Ok(piece) = model.token_to_str(new_token, llama_cpp_2::model::Special::Tokenize) {
+            // Stop on ChatML control tokens
             if piece.contains("<|im_end|>") || piece.contains("<|im_start|>") {
                 break;
             }
 
+            // Handle thinking blocks (skip them from output)
             if piece.contains("<think>") {
                 in_thinking = true;
             } else if piece.contains("</think>") {
@@ -478,11 +307,12 @@ fn run_inference(
                 after_thinking = true;
             } else if !in_thinking {
                 if after_thinking && piece.trim().is_empty() {
-                    // Skip
+                    // Skip whitespace after thinking
                 } else {
                     after_thinking = false;
                     output.push_str(&piece);
 
+                    // Stop if we have too many lines (safety limit)
                     if !output.trim().is_empty() && output.trim().lines().count() > 10 {
                         break;
                     }
@@ -499,15 +329,59 @@ fn run_inference(
             .map_err(|e| format!("Decode failed: {}", e))?;
     }
 
+    Ok(output)
+}
+
+/// Run agentic inference with tool loop
+/// The model decides when to call tools and the CLI executes them
+fn run_inference(
+    model: &LlamaModel,
+    backend: &LlamaBackend,
+    command: &str,
+    shell_str: &str,
+    verbose: bool,
+) -> Result<String, String> {
+    let shell = Shell::parse(shell_str).unwrap_or(Shell::Bash);
+
+    // Use the agentic loop - model decides which tools to call
+    let result: AgentResult = agentic_correct(command, shell, None, |prompt| {
+        if verbose {
+            eprintln!("=== Prompt ===\n{}\n=== End Prompt ===", prompt);
+        }
+
+        match generate_response(model, backend, prompt) {
+            Ok(response) => {
+                if verbose {
+                    eprintln!("=== Response ===\n{}\n=== End Response ===", response);
+                }
+                response
+            }
+            Err(e) => {
+                if verbose {
+                    eprintln!("Generation error: {}", e);
+                }
+                // Return empty on error - will trigger fallback
+                String::new()
+            }
+        }
+    });
+
+    if verbose {
+        eprintln!(
+            "Agentic result: iterations={}, tools_used={}",
+            result.iterations, result.tools_used
+        );
+    }
+
     // Clean output
-    let result = output.trim();
-    let result = result
+    let output = result.command.trim();
+    let output = output
         .strip_prefix("|")
-        .or_else(|| result.strip_prefix("| "))
-        .unwrap_or(result)
+        .or_else(|| output.strip_prefix("| "))
+        .unwrap_or(output)
         .trim();
 
-    Ok(result.to_string())
+    Ok(output.to_string())
 }
 
 /// Run daemon mode
